@@ -19,7 +19,6 @@ venv/
 env/
 *.egg-info/
 .eggs/
-uv.lock
 site/
 .ruff_cache
 .pytest_cache
