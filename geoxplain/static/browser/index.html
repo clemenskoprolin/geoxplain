@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <!-- Pre-warm TCP connections to tile servers so first zoom has no DNS/TLS lag -->
+    <link rel="preconnect" href="https://tile.opentopomap.org" />
+    <link rel="preconnect" href="https://server.arcgisonline.com" />
+    <link rel="dns-prefetch" href="https://tile.opentopomap.org" />
+    <link rel="dns-prefetch" href="https://server.arcgisonline.com" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GeoXplain Visualization</title>
+    <script type="module" crossorigin src="./assets/index.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>

@@ -1,0 +1,81 @@
+[project]
+name = "geoxplain"
+version = "1.0.0"
+description = "Interactive viewer for geospatial XAI attributions"
+readme = "README.md"
+authors = [
+    { name = "Clemens Koprolin", email = "clemens@koprolin.com" },
+]
+maintainers = [
+    { name = "Clemens Koprolin", email = "clemens@koprolin.com" },
+]
+license = "MIT"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+requires-python = ">=3.10"
+keywords = [
+    "explainable-ai",
+    "geospatial",
+    "jupyter",
+    "machine-learning",
+    "visualization",
+    "weather",
+    "xai",
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Scientific/Engineering :: Atmospheric Science",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "numpy>=1.24",
+    "scipy>=1.10",
+    "anywidget>=0.9",
+    "traitlets>=5.0",
+    "requests>=2.34.2",
+    "jupyter-core>=5.0",
+    "jupyterlab>=4.0",
+    "ipykernel>=6.0",
+    "xarray>=2024.1",
+    "netCDF4>=1.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/clemenskoprolin/geoxplain"
+Repository = "https://github.com/clemenskoprolin/geoxplain"
+Documentation = "https://clemenskoprolin.github.io/geoxplain/"
+Issues = "https://github.com/clemenskoprolin/geoxplain/issues"
+
+[project.optional-dependencies]
+screenshots = [
+    "playwright>=1.45",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+# Include the Python package AND the compiled frontend assets
+packages = ["geoxplain"]
+artifacts = ["geoxplain/static/**/*"]
+
+[dependency-groups]
+dev = [
+    "geoxplain-aurora-adapter[client]",
+    "mkdocs>=1.6.1",
+    "mkdocs-material>=9.7.6",
+    "mkdocstrings[python]>=1.0.4",
+    "pytest>=9.1.1",
+    "ruff>=0.15.18",
+]

@@ -1,0 +1,3 @@
+# Treated as generated binaries so they don't flood
+# diffs, PR reviews, or language stats.
+geoxplain/static/** linguist-generated=true -diff

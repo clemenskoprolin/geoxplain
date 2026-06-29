@@ -1,0 +1,487 @@
+{
+  "schema_version": 1,
+  "description": "Public API inventory for the GeoXplain package and the separate Aurora backend package.",
+  "packages": [
+    {
+      "name": "geoxplain",
+      "symbols": [
+        {
+          "name": "GeoXplain",
+          "qualified_name": "geoxplain.viewer.GeoXplain",
+          "kind": "class",
+          "signature": "(out_path: str | os.PathLike[str] | None = None, *, title: str = 'GeoXplain', subtitle: str | None = 'Interactive geospatial attribution viewer', target_color: str = '#06b6d4', colormap: Any = 'default', contours: Optional[bool] = None, absolute: Optional[bool] = None, result: Any = None) -> None",
+          "description": "Build, export, and serve a standalone GeoXplain viewer.\n\nBy default the viewer keeps everything in memory: nothing is written to\ndisk until you call :meth:`open` (temporary browser preview),\n:meth:`export` (an explicit ``viewer_data.json``), or\n:meth:`export_browser` (a self-contained browser bundle). Pass\n``out_path`` to opt into the legacy behavior where every data mutation\nre-writes that JSON file.\n\nMultiple methods and timestamps can be accumulated before opening the\npackaged browser application or capturing a screenshot.\n\nParameters\n----------\nout_path:\n    Optional ``viewer_data.json`` path that each mutation keeps in sync.\n    When ``None`` (the default) the viewer never touches the filesystem on\n    its own; use :meth:`open`, :meth:`export`, or :meth:`export_browser`\n    instead.\ntitle:\n    Non-empty application title.\nsubtitle:\n    Optional subtitle; ``None`` or an empty string hides it.\ntarget_color:\n    CSS color used for target points and boxes.\ncolormap:\n    Default attribution preset or custom color stops.\ncontours:\n    Whether attribution starts in contour mode.\nabsolute:\n    Whether attribution starts showing absolute magnitude instead of\n    signed/diverging values.\nresult:\n    Optional ``XiaResult``-compatible object to add immediately.\n\nExamples\n--------\n>>> from geoxplain import GeoXplain\n>>> viewer = GeoXplain()\n>>> viewer.add_attribution(\n...     \"saliency_700hPa.npy\",\n...     pressure_level=700,\n...     method=\"Saliency\",\n... )",
+          "members": [
+            {
+              "name": "export_path",
+              "kind": "property",
+              "signature": null,
+              "description": "Configured ``viewer_data.json`` path, or ``None`` when in-memory only."
+            },
+            {
+              "name": "export",
+              "kind": "method",
+              "signature": "(self, out_path: str | os.PathLike[str] | None = None) -> pathlib._local.Path",
+              "description": "Write the current state as ``viewer_data.json``.\n\nParameters\n----------\nout_path:\n    Destination path. When omitted, the ``out_path`` supplied to the\n    constructor is used. A path is required: if neither is set, call\n    :meth:`open` to preview in a browser or :meth:`export_browser` to\n    write a self-contained bundle instead.\n\nReturns\n-------\npathlib.Path\n    The written JSON path.\n\nRaises\n------\nValueError\n    If no ``out_path`` is given and none was supplied to the\n    constructor."
+            },
+            {
+              "name": "export_browser",
+              "kind": "method",
+              "signature": "(self, out_dir: str | os.PathLike[str]) -> pathlib._local.Path",
+              "description": "Write a self-contained static browser bundle to *out_dir*.\n\nCopies the packaged browser application into *out_dir* and writes the\ncurrent state next to it as ``viewer_data.json``. The result can be\nserved by any static file host (``out_dir`` and everything under it).\n\nParameters\n----------\nout_dir:\n    Destination directory. Created if it does not exist.\n\nReturns\n-------\npathlib.Path\n    Path to the bundle's ``index.html``."
+            },
+            {
+              "name": "remove_export",
+              "kind": "method",
+              "signature": "(self) -> 'GeoXplain'",
+              "description": "Delete the configured JSON export and return this viewer.\n\nA no-op when no ``out_path`` was configured. In-memory attributions and\noverlays are never cleared."
+            },
+            {
+              "name": "screenshot",
+              "kind": "method",
+              "signature": "(self, out_path: str | os.PathLike[str] | None = None, *, width: int | None = None, height: int | None = None, output_dir: str | os.PathLike[str] = 'screenshots', timeout: float = 30.0, launch_state: dict[str, typing.Any] | None = None) -> pathlib._local.Path",
+              "description": "Capture the current exported viewer data as a PNG screenshot.\n\nThe screenshot contains only the map/globe visualization, attribution,\ntargets, and overlays. UI controls are hidden for the capture.\n\n``out_path`` may be a file or directory. When omitted, a generated\nfilename is placed under ``output_dir``. The optional ``launch_state``\nrestores an explicit camera and viewer configuration for the capture.\n\nReturns\n-------\npathlib.Path\n    The written PNG path."
+            },
+            {
+              "name": "open",
+              "kind": "method",
+              "signature": "(self, *, open_browser: bool = True) -> geoxplain.viewer.GeoXplainOpenHandle",
+              "description": "Serve the current viewer export from a temporary local browser build.\n\nThe returned handle owns a temporary directory and a local HTTP server.\nCall ``handle.close()`` when the browser session is no longer needed.\n\nParameters\n----------\nopen_browser:\n    Open the generated local URL with Python's default browser handler.\n\nReturns\n-------\nGeoXplainOpenHandle\n    Context-manager-compatible owner of the server and temporary files."
+            }
+          ]
+        },
+        {
+          "name": "GeoXplainWidget",
+          "qualified_name": "geoxplain.widget.GeoXplainWidget",
+          "kind": "class",
+          "signature": "(height: 'int' = 620, initial_view_mode: 'str' = 'map', initial_map_type: 'str' = 'topo', contours: 'bool' = False, absolute: 'bool' = False, smooth: 'bool' = True, title: 'str' = 'GeoXplain', subtitle: 'str | None' = 'Interactive geospatial attribution viewer', target_color: 'str' = '#06b6d4', colormap: 'Any' = 'default', config_dir: 'str | os.PathLike[str] | None' = None, live_browser_export: 'bool | None' = None, result: 'Any' = None, **kwargs) -> 'None'",
+          "description": "Interactive Jupyter widget for GeoXplain attribution visualization.\n\nThe widget renders the same globe / map viewer used by the\nstandalone browser app, but embedded directly in a notebook cell.\n\nParameters\n----------\nheight:\n    Cell height in pixels (default 620).\ninitial_view_mode:\n    Starting render mode — ``'globe'`` or ``'map'``.\ninitial_map_type:\n    Starting basemap — ``'topo'`` or ``'satellite'``.\ncontours:\n    Start with the contour-line depiction instead of the filled heatmap\n    (default ``False``).  Users can switch styles at any time with the\n    contour toggle in the viewer's view controls.\nabsolute:\n    Start showing absolute magnitude instead of signed/diverging values\n    (default ``False``).  Users can switch with the \"Signed values\" toggle\n    in the viewer's Appearance menu.\nsmooth:\n    Start with imported-grid smoothing enabled (default ``True``).\nconfig_dir:\n    Optional browser-export directory. Relative paths are resolved from the\n    kernel working directory; absolute paths are treated as Jupyter\n    server-relative paths (for example ``'/exports/my-widget'``).\nlive_browser_export:\n    How the \"Open in browser\" button serves the standalone viewer.\n\n    - ``None`` (default): auto-detect. When the notebook page is reached\n      through an SSH port-forward — a loopback browser origin while the\n      Jupyter server is bound to a remote host — the button is served from\n      the Jupyter server's ``/files`` endpoint, reusing the port you\n      already forward for the notebook (no extra tunnel). On a genuinely\n      local session it instead uses a short-lived local preview server,\n      which can also push imported-data updates into an already-open tab.\n    - ``True``: always use the live preview server. Choose this on a remote\n      session only if you have forwarded the preview server's port yourself\n      and want live imported-data syncing.\n    - ``False``: always use the static ``/files`` URL. No extra port to\n      forward, but an already-open tab is not auto-updated; re-open it to\n      refresh.\ntitle:\n    Application title shown in the widget and browser-viewer headers.\nsubtitle:\n    Optional application subtitle shown under the title. Pass ``None`` or\n    an empty string to hide it.\ntarget_color:\n    CSS color used for target points and boxes.\ncolormap:\n    Default attribution preset or custom color stops.\nresult:\n    Optional ``XiaResult``-compatible object to add immediately.\n**kwargs:\n    Additional keyword arguments forwarded to ``anywidget.AnyWidget``.",
+          "members": [
+            {
+              "name": "screenshot",
+              "kind": "method",
+              "signature": "(self, out_path: 'str | os.PathLike[str] | None' = None, *, width: 'int | None' = None, height: 'int | None' = None, output_dir: 'str | os.PathLike[str]' = 'screenshots', timeout: 'float' = 30.0, launch_state: 'dict[str, Any] | None' = None) -> 'pathlib.Path'",
+              "description": "Capture the widget's current viewer state as a PNG screenshot.\n\nThe screenshot contains only the map/globe visualization, attribution,\ntargets, and overlays. UI controls are hidden for the capture.\n\nWhen ``width`` or ``height`` is omitted, the latest dimensions reported\nby the rendered widget are used, falling back to 1100 pixels by the\nconfigured widget height. ``launch_state`` overrides the latest camera\nand viewer state reported by the frontend.\n\nReturns\n-------\npathlib.Path\n    The written PNG path."
+            },
+            {
+              "name": "close",
+              "kind": "method",
+              "signature": "(self) -> 'None'",
+              "description": "Stop the browser preview server and release widget resources."
+            }
+          ]
+        },
+        {
+          "name": "GeoXplainBase",
+          "qualified_name": "geoxplain._base.GeoXplainBase",
+          "kind": "class",
+          "signature": "()",
+          "description": "Shared API for standalone and widget GeoXplain viewers.",
+          "members": [
+            {
+              "name": "add_attribution",
+              "kind": "method",
+              "signature": "(self: '_BaseT', source: 'AttributionSource', *, level: 'str | None' = None, pressure_level: 'int | None' = None, method: 'str | _DefaultMethod' = 'saliency', timestamp: 'str | None' = None, target: 'Any' = <object object>, norm: 'str' = 'global', label: 'str | None' = None, layer_labels: 'Mapping[str, str] | None' = None, colormap: 'Any' = None) -> '_BaseT'",
+              "description": "Add attribution data to the viewer.\n\nParameters\n----------\nsource:\n    A two-dimensional NumPy array, a path to a ``.npy`` grid, a mapping\n    from ``\"sfc\"`` or ``\"z-<int>\"`` level IDs to grids, or an object\n    satisfying :class:`geoxplain.xia_result.XiaResultProtocol`.\nlevel:\n    Level ID for one raw grid. Exactly one of ``level`` and\n    ``pressure_level`` is required for a single array or path.\npressure_level:\n    Pressure level in hPa for one raw grid. Supported values are\n    1000, 925, 850, 700, 600, 500, 400, 300, 250, 200, 150, 100, and 50.\nmethod:\n    Human-readable method name. Defaults to ``\"saliency\"`` for raw\n    inputs and must not be supplied for a result bundle.\ntimestamp:\n    Optional frame timestamp for a raw grid or level mapping.\ntarget:\n    Optional point or box accepted by the viewer target serializer.\n    Result bundles provide their own targets.\nnorm:\n    ``\"global\"``, ``\"per-frame\"``, or ``\"per-level\"``.\nlabel:\n    Display label for the single level supplied by an array or path.\nlayer_labels:\n    Display labels keyed by level ID for a level mapping.\ncolormap:\n    Attribution preset name or custom color stops. This may override a\n    result bundle's display colormap.\n\nReturns\n-------\nGeoXplainBase\n    This viewer instance, for method chaining.\n\nRaises\n------\nTypeError\n    If the source form conflicts with supplied metadata.\nValueError\n    If a level, pressure level, normalization, target, method, or\n    colormap is invalid.\n\nNotes\n-----\nMutating methods return the viewer so calls can be chained. In a\nJupyter notebook this means ending a cell with a bare mutating call\nre-renders an already-displayed widget as a second copy. Append a\nsemicolon to suppress that extra output::\n\n    widget.add_attribution(result);"
+            },
+            {
+              "name": "clear_attributions",
+              "kind": "method",
+              "signature": "(self: '_BaseT') -> '_BaseT'",
+              "description": "Remove attribution methods, frames, targets, and level data."
+            },
+            {
+              "name": "add_overlay",
+              "kind": "method",
+              "signature": "(self: '_BaseT', source: 'OverlaySource', *, variable: 'str | None' = None, name: 'str | None' = None, unit: 'str | None' = None, colormap: 'Any' = None, timestamps: 'Sequence[str | None] | None' = None, visible: 'bool | None' = None, opacity: 'float | None' = None, stretch: 'tuple[float, float] | Sequence[float] | None' = None, offset_hours: 'int | None' = None, time_label: 'str | None' = None) -> '_BaseT'",
+              "description": "Add a weather overlay to the viewer.\n\nParameters\n----------\nsource:\n    A two- or three-dimensional NumPy array, a NetCDF path, or an\n    object satisfying\n    :class:`geoxplain.overlay_result.OverlayResultProtocol`.\nvariable:\n    NetCDF variable to load. Required for a path and rejected for an\n    array or result bundle.\nname:\n    Display name. Defaults to the NetCDF variable, ``\"Overlay\"`` for\n    an array, or metadata from a result bundle.\nunit:\n    Unit displayed by the viewer.\ncolormap:\n    ``\"viridis\"``, ``\"plasma\"``, ``\"thermal\"``, ``\"sequential\"``,\n    or custom ``(position, color)`` gradient stops.\ntimestamps:\n    Optional sequence aligned with the first dimension of a 3-D array.\nvisible:\n    Whether the overlay starts visible.\nopacity:\n    Optional default layer opacity in ``[0, 1]``. When omitted the\n    viewer uses its own default (0.7).\nstretch:\n    Optional ``(low, high)`` contrast-stretch fractions in ``[0, 1]``\n    (the draggable colormap-legend handles). When omitted the viewer\n    uses the full range ``(0, 1)``.\noffset_hours:\n    Optional integer hours the field data is shifted relative to each\n    frame's displayed time (negative = earlier, positive = later). The\n    displayed frame is Aurora's most-recent input step t1, so ``-6``\n    pulls the prior input step t0 and ``+6`` the forecast valid time t2.\n    The viewer annotates it as \"… h before/after this frame\". For an\n    ``OverlayResult`` source it defaults to the bundle's recorded offset.\ntime_label:\n    Optional free-text annotation the viewer shows next to the offset\n    (e.g. ``\"Aurora input step t0\"`` for ``-6`` or ``\"Forecast valid\n    time t2\"`` for ``+6``). For an ``OverlayResult`` source it defaults\n    to the bundle's recorded label.\n\nReturns\n-------\nGeoXplainBase\n    This viewer instance, for method chaining.\n\nRaises\n------\nTypeError\n    If the source form conflicts with ``variable``.\nValueError\n    If required metadata, dimensions, or the colormap is invalid.\n\nNotes\n-----\nMutating methods return the viewer so calls can be chained. In a\nJupyter notebook this means ending a cell with a bare mutating call\nre-renders an already-displayed widget as a second copy. Append a\nsemicolon to suppress that extra output::\n\n    widget.add_overlay(overlay);"
+            },
+            {
+              "name": "clear_overlays",
+              "kind": "method",
+              "signature": "(self: '_BaseT') -> '_BaseT'",
+              "description": "Remove overlays only."
+            },
+            {
+              "name": "set_title",
+              "kind": "method",
+              "signature": "(self: '_BaseT', title: 'str') -> '_BaseT'",
+              "description": "Set the application title shown in the viewer header."
+            },
+            {
+              "name": "set_subtitle",
+              "kind": "method",
+              "signature": "(self: '_BaseT', subtitle: 'str | None') -> '_BaseT'",
+              "description": "Set the optional application subtitle shown below the title."
+            },
+            {
+              "name": "set_options",
+              "kind": "method",
+              "signature": "(self: '_BaseT', *, view_mode: 'str | None' = None, map_type: 'str | None' = None, **options: 'Any') -> '_BaseT'",
+              "description": "Update viewer options using Python-style names.\n\nParameters\n----------\nview_mode:\n    ``\"heatmap\"`` or ``\"contours\"`` for attribution depiction. For\n    backward compatibility, ``\"map\"`` and ``\"globe\"`` also select\n    the renderer.\nmap_type:\n    ``\"map\"`` or ``\"globe\"`` for the renderer. ``\"topo\"`` and\n    ``\"satellite\"`` are also accepted as basemap aliases.\n**options:\n    Additional frontend options. Common Python names are ``basemap``,\n    ``contours``, ``absolute`` (or ``signed`` for the inverse),\n    ``smooth`` (or ``smooth_imported_grids``), and\n    ``smooth_imported_grid_sigma``. Other snake-case names are\n    converted to camel case before being sent to the frontend.\n\nReturns\n-------\nGeoXplainBase\n    This viewer instance, for method chaining."
+            },
+            {
+              "name": "clear",
+              "kind": "method",
+              "signature": "(self: '_BaseT') -> '_BaseT'",
+              "description": "Remove attribution and overlay data while keeping configuration."
+            }
+          ]
+        },
+        {
+          "name": "GeoXplainOpenHandle",
+          "qualified_name": "geoxplain.viewer.GeoXplainOpenHandle",
+          "kind": "class",
+          "signature": "(*, url: str, server: geoxplain.viewer._OpenHTTPServer, thread: threading.Thread, temporary_directory: tempfile.TemporaryDirectory) -> None",
+          "description": "Handle returned by :meth:`GeoXplain.open`.",
+          "members": [
+            {
+              "name": "close",
+              "kind": "method",
+              "signature": "(self) -> None",
+              "description": "Stop the local static server and remove its temporary files."
+            }
+          ]
+        },
+        {
+          "name": "XiaFrameProtocol",
+          "qualified_name": "geoxplain.xia_result.XiaFrameProtocol",
+          "kind": "class",
+          "signature": "(*args, **kwargs)",
+          "description": "Duck-typed interface for one time step of a :class:`XiaResultProtocol`.",
+          "members": [
+            {
+              "name": "as_widget_dict",
+              "kind": "method",
+              "signature": "(self) -> 'dict'",
+              "description": "Return this frame's target info as a dict accepted by the widget."
+            }
+          ]
+        },
+        {
+          "name": "XiaFrameFile",
+          "qualified_name": "geoxplain.xia_result.XiaFrameFile",
+          "kind": "class",
+          "signature": "(timestamp: 'str', attributions: 'dict[str, dict[str, np.ndarray]]', diverging: 'bool', meta: 'dict' = <factory>, _target_dict: 'dict' = <factory>) -> None",
+          "description": "Concrete ``XiaFrameProtocol`` implementation loaded from a ``.xia.npz``.",
+          "members": [
+            {
+              "name": "as_widget_dict",
+              "kind": "method",
+              "signature": "(self) -> 'dict'",
+              "description": "Return the frame's target info in the format accepted by the widget.\n\n``mode=\"box\"`` targets store ``(lat, lon)`` as the box *center* and\n``size=(dlat, dlon)`` as the full extent in degrees; we derive\nsouth / north / west / east from those here."
+            }
+          ]
+        },
+        {
+          "name": "XiaResultProtocol",
+          "qualified_name": "geoxplain.xia_result.XiaResultProtocol",
+          "kind": "class",
+          "signature": "(*args, **kwargs)",
+          "description": "Duck-typed interface accepted by ``add_attribution()``.\n\nAny object providing these attributes can be used, regardless of which\nmodel or explanation library produced it.",
+          "members": []
+        },
+        {
+          "name": "XiaResultFile",
+          "qualified_name": "geoxplain.xia_result.XiaResultFile",
+          "kind": "class",
+          "signature": "(method: 'str', frames: 'list[XiaFrameFile]', layer_labels: 'dict[str, str]' = <factory>, meta: 'dict' = <factory>, method_label: 'str' = '') -> None",
+          "description": "Concrete ``XiaResultProtocol`` implementation loaded from a ``.xia.npz``.",
+          "members": []
+        },
+        {
+          "name": "load_xia_result",
+          "qualified_name": "geoxplain.xia_result.load_xia_result",
+          "kind": "function",
+          "signature": "(path: 'str | os.PathLike') -> 'XiaResultFile'",
+          "description": "Load a backend-independent ``.xia.npz`` attribution bundle.\n\nParameters\n----------\npath:\n    Path to the ``.xia.npz`` archive (``format_version == 2``).\n\nReturns\n-------\nAn ``XiaResultFile`` instance that satisfies ``XiaResultProtocol``\nand can be passed to ``GeoXplain.add_attribution()`` or\n``GeoXplainWidget.add_attribution()``."
+        },
+        {
+          "name": "OverlayFrameProtocol",
+          "qualified_name": "geoxplain.overlay_result.OverlayFrameProtocol",
+          "kind": "class",
+          "signature": "(*args, **kwargs)",
+          "description": "Base class for protocol classes.\n\nProtocol classes are defined as::\n\n    class Proto(Protocol):\n        def meth(self) -> int:\n            ...\n\nSuch classes are primarily used with static type checkers that recognize\nstructural subtyping (static duck-typing).\n\nFor example::\n\n    class C:\n        def meth(self) -> int:\n            return 0\n\n    def func(x: Proto) -> int:\n        return x.meth()\n\n    func(C())  # Passes static type check\n\nSee PEP 544 for details. Protocol classes decorated with\n@typing.runtime_checkable act as simple-minded runtime protocols that check\nonly the presence of given attributes, ignoring their type signatures.\nProtocol classes can be generic, they are defined as::\n\n    class GenProto[T](Protocol):\n        def meth(self) -> T:\n            ...",
+          "members": []
+        },
+        {
+          "name": "OverlayFrameFile",
+          "qualified_name": "geoxplain.overlay_result.OverlayFrameFile",
+          "kind": "class",
+          "signature": "(timestamp: 'str', data: 'np.ndarray') -> None",
+          "description": "Concrete ``OverlayFrameProtocol`` implementation loaded from a ``.overlay.npz``.",
+          "members": []
+        },
+        {
+          "name": "OverlayResultProtocol",
+          "qualified_name": "geoxplain.overlay_result.OverlayResultProtocol",
+          "kind": "class",
+          "signature": "(*args, **kwargs)",
+          "description": "Base class for protocol classes.\n\nProtocol classes are defined as::\n\n    class Proto(Protocol):\n        def meth(self) -> int:\n            ...\n\nSuch classes are primarily used with static type checkers that recognize\nstructural subtyping (static duck-typing).\n\nFor example::\n\n    class C:\n        def meth(self) -> int:\n            return 0\n\n    def func(x: Proto) -> int:\n        return x.meth()\n\n    func(C())  # Passes static type check\n\nSee PEP 544 for details. Protocol classes decorated with\n@typing.runtime_checkable act as simple-minded runtime protocols that check\nonly the presence of given attributes, ignoring their type signatures.\nProtocol classes can be generic, they are defined as::\n\n    class GenProto[T](Protocol):\n        def meth(self) -> T:\n            ...",
+          "members": []
+        },
+        {
+          "name": "OverlayResultFile",
+          "qualified_name": "geoxplain.overlay_result.OverlayResultFile",
+          "kind": "class",
+          "signature": "(variable: 'str', level: 'int | None', frames: 'list[OverlayFrameFile]', label: 'str', unit: 'str', colormap: 'Any', visible: 'bool', overlay_offset_hours: 'int' = 0, time_label: 'str | None' = None, meta: 'dict' = <factory>) -> None",
+          "description": "Concrete ``OverlayResultProtocol`` implementation loaded from a ``.overlay.npz``.",
+          "members": []
+        },
+        {
+          "name": "load_overlay_result",
+          "qualified_name": "geoxplain.overlay_result.load_overlay_result",
+          "kind": "function",
+          "signature": "(path: 'str | os.PathLike') -> 'OverlayResultFile'",
+          "description": "Load a ``.overlay.npz`` file produced by ``OverlayResult.save()``.\n\nParameters\n----------\npath:\n    Path to the ``.overlay.npz`` archive (``format_version == 3``; older\n    version-1/2 bundles load too, with ``overlay_offset_hours`` defaulting\n    to 0 and ``time_label`` to ``None``).\n\nReturns\n-------\nAn ``OverlayResultFile`` instance that satisfies ``OverlayResultProtocol``\nand can be passed to ``GeoXplainWidget.add_overlay()``."
+        }
+      ]
+    },
+    {
+      "name": "geoxplain_aurora_adapter",
+      "symbols": [
+        {
+          "name": "Target",
+          "qualified_name": "geoxplain_aurora_adapter.schema.spec.Target",
+          "kind": "class",
+          "signature": "()",
+          "description": "Namespace for TargetSpec factory methods.\n\nUsage::\n\n    import geoxplain_aurora_adapter as ax\n\n    # Single grid point\n    target = ax.Target.point(var=\"q\", level=850, lat=46.2, lon=8.8,\n                             timestamp=\"2024-03-20T00:00:00Z\")\n\n    # Box of default size (2.0° lat × 3.0° lon) centered at (lat, lon)\n    target = ax.Target.box(var=\"q\", level=850, lat=46.25, lon=8.75,\n                           timestamp=\"2024-03-20T00:00:00Z\")\n\n    # Box of custom size\n    target = ax.Target.box(var=\"q\", level=850, lat=46.25, lon=8.75,\n                           size=(1.5, 2.5),\n                           timestamp=\"2024-03-20T00:00:00Z\")",
+          "members": [
+            {
+              "name": "point",
+              "kind": "static method",
+              "signature": "(*, var: 'str', level: 'Optional[int]', lat: 'float', lon: 'float', timestamp: 'str') -> \"'TargetSpec'\"",
+              "description": "Single-grid-point target."
+            },
+            {
+              "name": "box",
+              "kind": "static method",
+              "signature": "(*, var: 'str', level: 'Optional[int]', lat: 'float', lon: 'float', timestamp: 'str', size: 'tuple[float, float]' = (2.0, 3.0)) -> \"'TargetSpec'\"",
+              "description": "Box-mean target centered at ``(lat, lon)`` with extent ``size``."
+            }
+          ]
+        },
+        {
+          "name": "TargetSpec",
+          "qualified_name": "geoxplain_aurora_adapter.schema.spec.TargetSpec",
+          "kind": "class",
+          "signature": "(var: 'str', level: 'Optional[int]', mode: 'str', timestamp: 'str', lat: 'Optional[float]' = None, lon: 'Optional[float]' = None, size: 'Optional[tuple[float, float]]' = None) -> None",
+          "description": "Fully-resolved specification of the XIA attribution target.\n\nFields\n------\nvar:        Variable name in the model output (e.g. ``\"q\"``, ``\"t\"``, ``\"zwd\"``).\nlevel:      Pressure level in hPa (e.g. ``850``).  ``None`` for surface-only vars.\nmode:       Spatial selection mode: ``\"point\"`` or ``\"box\"``.\ntimestamp:  ISO-8601 string for the second (t1) input timestep, e.g.\n            ``\"2024-03-20T00:00:00Z\"``.  This is what you pass when\n            *constructing* a target, and it is preserved unchanged as the\n            frame's displayed timestamp (``frame.target.timestamp`` ==\n            ``frame.timestamp`` == t1).  The explained prediction is the\n            6 h-ahead step t2 = t1 + lead, recorded in the frame's\n            ``lead_hours`` metadata rather than by shifting the timestamp.\nlat/lon:    Point coordinates (``mode=\"point\"``) or *box center*\n            (``mode=\"box\"``).  Longitudes accepted in either\n            ``-180..180`` or ``0..360`` convention.\nsize:       Box full extent in degrees ``(dlat, dlon)`` (``mode=\"box\"``\n            only).  The actual bounds are\n            ``[lat-dlat/2, lat+dlat/2] × [lon-dlon/2, lon+dlon/2]``.",
+          "members": [
+            {
+              "name": "point",
+              "kind": "class method",
+              "signature": "(*, var: 'str', level: 'Optional[int]', lat: 'float', lon: 'float', timestamp: 'str') -> \"'TargetSpec'\"",
+              "description": "Single-grid-point target."
+            },
+            {
+              "name": "box",
+              "kind": "class method",
+              "signature": "(*, var: 'str', level: 'Optional[int]', lat: 'float', lon: 'float', timestamp: 'str', size: 'tuple[float, float]' = (2.0, 3.0)) -> \"'TargetSpec'\"",
+              "description": "Box-mean target centered at ``(lat, lon)`` with extent ``size``."
+            },
+            {
+              "name": "box_bounds",
+              "kind": "method",
+              "signature": "(self) -> 'tuple[float, float, float, float]'",
+              "description": "Return ``(south, north, west, east)`` for ``mode=\"box\"``."
+            },
+            {
+              "name": "to_dict",
+              "kind": "method",
+              "signature": "(self) -> 'dict'",
+              "description": ""
+            },
+            {
+              "name": "from_dict",
+              "kind": "class method",
+              "signature": "(d: 'dict') -> \"'TargetSpec'\"",
+              "description": ""
+            },
+            {
+              "name": "as_widget_dict",
+              "kind": "method",
+              "signature": "(self) -> 'dict'",
+              "description": "Return the target in the model-agnostic GeoXplain viewer format."
+            }
+          ]
+        },
+        {
+          "name": "XiaResult",
+          "qualified_name": "geoxplain_aurora_adapter.schema.result.XiaResult",
+          "kind": "class",
+          "signature": "(method: 'str', frames: 'list[XiaFrame]', layer_labels: 'dict[str, str]' = <factory>, meta: 'dict' = <factory>, method_label: 'str' = '') -> None",
+          "description": "Self-describing XIA attribution bundle (one method, one or more frames).\n\nAttributes\n----------\nmethod:\n    XIA method id: ``\"saliency\"``, ``\"ig\"``, ``\"rise\"``, or ``\"vit_cx\"``.\n    A stable machine identifier (the compute/dispatch layers branch on it).\nmethod_label:\n    Human-readable method name for display, e.g. ``\"Integrated Gradients\"``.\n    Empty when unknown; consumers fall back to ``method`` in that case.\nframes:\n    One :class:`XiaFrame` per time step.  Single-frame results are the\n    common case; use :meth:`single` to build one ergonomically.\nlayer_labels:\n    Optional ``{level_key: display_name}`` map shared across frames, e.g.\n    ``{\"z-2\": \"850 hPa\", \"sfc\": \"Surface\"}``.  Absent keys fall back to the\n    bare number (``\"z-2\"`` → ``\"2\"``) or ``\"Surface\"`` for ``\"sfc\"``.\nmeta:\n    Bundle-level diagnostic metadata: ``\"checkpoint_hash\"``, ``\"host\"``,\n    ``\"slurm_job_id\"``, etc.",
+          "members": [
+            {
+              "name": "single",
+              "kind": "class method",
+              "signature": "(method: 'str', target: 'TargetSpec', timestamp: 'str', attributions: 'dict[str, dict[str, np.ndarray]]', diverging: 'bool', meta: 'dict | None' = None, *, layer_labels: 'dict[str, str] | None' = None, frame_meta: 'dict | None' = None, method_label: 'str' = '') -> \"'XiaResult'\"",
+              "description": "Build a one-frame bundle.\n\n``meta`` becomes the bundle-level metadata; ``frame_meta`` (if given)\nis attached to the single frame.  For the common case where there is\nonly one frame, passing diagnostics via ``meta`` is fine."
+            },
+            {
+              "name": "save",
+              "kind": "method",
+              "signature": "(self, path: 'str | os.PathLike') -> 'None'",
+              "description": "Save to a ``.xia.npz`` archive.\n\nIf *path* does not end with ``\".xia.npz\"``, the suffix is appended\nautomatically."
+            },
+            {
+              "name": "load",
+              "kind": "class method",
+              "signature": "(path: 'str | os.PathLike') -> \"'XiaResult'\"",
+              "description": "Load from a ``.xia.npz`` archive (``format_version == 2``)."
+            },
+            {
+              "name": "to_msgpack",
+              "kind": "method",
+              "signature": "(self) -> 'bytes'",
+              "description": "Serialize to msgpack bytes for HTTP transport.\n\nArrays are embedded as raw float32 LE bytes + shape info.  The\nresult is designed to be deserialised by ``XiaResult.from_msgpack``."
+            },
+            {
+              "name": "from_msgpack",
+              "kind": "class method",
+              "signature": "(data: 'bytes') -> \"'XiaResult'\"",
+              "description": "Deserialize from msgpack bytes produced by ``XiaResult.to_msgpack``."
+            },
+            {
+              "name": "summary",
+              "kind": "method",
+              "signature": "(self) -> 'str'",
+              "description": "One-line human-readable summary."
+            }
+          ]
+        },
+        {
+          "name": "XiaFrame",
+          "qualified_name": "geoxplain_aurora_adapter.schema.result.XiaFrame",
+          "kind": "class",
+          "signature": "(target: 'TargetSpec', timestamp: 'str', attributions: 'dict[str, dict[str, np.ndarray]]', diverging: 'bool', meta: 'dict' = <factory>) -> None",
+          "description": "A single time step of an :class:`XiaResult` bundle.\n\nAttributes\n----------\ntarget:\n    The scalar that was explained (what variable, where, when).\ntimestamp:\n    ISO-8601 string of the **requested time** — Aurora's most-recent input\n    step t1 — which is what the viewer displays and equals\n    ``target.timestamp``. The explained prediction is the 6 h-ahead step\n    t2 = t1 + lead; ``meta[\"lead_hours\"]`` records the lead, and\n    ``meta[\"input_timestamp\"]`` echoes t1 for convenience.\nattributions:\n    ``attributions[wrt_var][level_key]`` is a ``(721, 1440)`` float32\n    array recording the sensitivity of the target to the input field\n    ``wrt_var`` at ``level_key``.  Atmospheric level keys have the form\n    ``\"z-{N}\"`` (higher ``N`` = higher in the tool); surface variables\n    use ``\"sfc\"``.\ndiverging:\n    Whether the attribution maps contain significant negative values.\n    Auto-detected from the sign distribution; controls whether the\n    visualization widget uses a diverging colormap.\nmeta:\n    Optional per-frame diagnostic metadata: ``\"target_score\"`` (scalar\n    value being explained, saliency/IG only), ``\"runtime_s\"``, etc.",
+          "members": [
+            {
+              "name": "as_widget_dict",
+              "kind": "method",
+              "signature": "(self) -> 'dict'",
+              "description": "Return this frame's target as a geoxplain-compatible dict.\n\nThe visualization side's importer calls ``as_widget_dict()`` on each\n*frame* (not on ``frame.target``) to place the target point/box.  When\nan in-memory :class:`XiaResult` is handed straight to the widget — the\nlive/remote path, with no ``.xia.npz`` round-trip — the frame object is\nthis class, so it must expose the method itself; otherwise the target\nis silently dropped.  Delegates to :meth:`TargetSpec.as_widget_dict`."
+            }
+          ]
+        },
+        {
+          "name": "OverlayResult",
+          "qualified_name": "geoxplain_aurora_adapter.schema.overlay.OverlayResult",
+          "kind": "class",
+          "signature": "(variable: 'str', level: 'Optional[int]', frames: 'list[OverlayFrame]', label: 'str', unit: 'str' = '', colormap: 'str' = 'viridis', visible: 'bool' = True, overlay_offset_hours: 'int' = 0, time_label: 'Optional[str]' = None, lat: 'Optional[np.ndarray]' = None, lon: 'Optional[np.ndarray]' = None, meta: 'dict' = <factory>) -> None",
+          "description": "Self-contained weather-field overlay bundle.\n\n``frames`` are raw ERA5/Aurora-grid arrays. The visualization package applies\nits existing preprocessing pipeline when the overlay is added to a widget.",
+          "members": [
+            {
+              "name": "timestamps",
+              "kind": "property",
+              "signature": null,
+              "description": ""
+            },
+            {
+              "name": "arrays",
+              "kind": "method",
+              "signature": "(self) -> 'np.ndarray'",
+              "description": ""
+            },
+            {
+              "name": "save",
+              "kind": "method",
+              "signature": "(self, path: 'str | os.PathLike') -> 'None'",
+              "description": "Save to a ``.overlay.npz`` archive."
+            },
+            {
+              "name": "load",
+              "kind": "class method",
+              "signature": "(path: 'str | os.PathLike') -> \"'OverlayResult'\"",
+              "description": "Load from a ``.overlay.npz`` archive."
+            },
+            {
+              "name": "to_msgpack",
+              "kind": "method",
+              "signature": "(self) -> 'bytes'",
+              "description": "Serialize to msgpack bytes for HTTP transport."
+            },
+            {
+              "name": "from_msgpack",
+              "kind": "class method",
+              "signature": "(data: 'bytes') -> \"'OverlayResult'\"",
+              "description": "Deserialize bytes produced by :meth:`to_msgpack`."
+            },
+            {
+              "name": "summary",
+              "kind": "method",
+              "signature": "(self) -> 'str'",
+              "description": ""
+            }
+          ]
+        },
+        {
+          "name": "OverlayFrame",
+          "qualified_name": "geoxplain_aurora_adapter.schema.overlay.OverlayFrame",
+          "kind": "class",
+          "signature": "(timestamp: 'str', data: 'np.ndarray') -> None",
+          "description": "One timestamped raw weather-field overlay frame.",
+          "members": []
+        },
+        {
+          "name": "pull_overlay",
+          "qualified_name": "geoxplain_aurora_adapter.api.methods.pull_overlay",
+          "kind": "function",
+          "signature": "(variable: 'str', dates: 'str | list[str] | tuple[str, ...] | None' = None, *, level: 'Optional[int]' = None, remote: 'Optional[str]' = None, name: 'Optional[str]' = None, unit: 'Optional[str]' = None, colormap: 'Optional[str]' = None, visible: 'bool' = True, overlay_time: 'str' = 'input', step_hours: 'int' = 6, timeout_s: 'float' = 1800.0, poll_interval_s: 'float' = 2.0, poll_max_s: 'float' = 30.0) -> 'OverlayResult'",
+          "description": "Pull ERA5 fields as timestamped viewer overlays.\n\n``dates`` accepts ISO timestamps, dates, ranges, or ``None`` to reuse the\nXIA frame timestamps recorded this session. The displayed frame keeps its\nrequested timestamp (Aurora's most-recent input step t1), so ``overlay_time``\nchooses the field time relative to it: ``\"input\"`` (0 h, the default — the\nframe's own time t1), ``\"prior\"`` (-6 h, the earlier input step t0), or\n``\"predicted\"`` (+6 h, the forecast valid time t2). It also sets a\n``time_label`` annotation on the result for the non-default choices\n(``\"prior\"`` → ``\"Aurora input step t0\"``, ``\"predicted\"`` → ``\"Forecast\nvalid time t2\"``), which the viewer shows next to the offset. Remote calls\nuse the listener at ``remote``; local calls read from the configured\ndataset."
+        },
+        {
+          "name": "session_timestamps",
+          "qualified_name": "geoxplain_aurora_adapter.api.dispatch.session_timestamps",
+          "kind": "function",
+          "signature": "() -> 'list[str]'",
+          "description": "Return the XIA target timestamps recorded this session (first-seen order)."
+        },
+        {
+          "name": "run_saliency",
+          "qualified_name": "geoxplain_aurora_adapter.api.methods.run_saliency",
+          "kind": "function",
+          "signature": "(target: 'TargetSpec', input: 'list[str]', *, remote: 'Optional[str]' = None, checkpoint_path: 'Optional[str]' = None, timeframes: 'int' = 1, step_hours: 'int' = 6, levels: 'Optional[int | list[int]]' = None, **options) -> 'XiaResult'",
+          "description": "Compute vanilla gradient saliency attribution.\n\nParameters\n----------\ntarget:         What scalar to explain.\ninput:          Input variable names to attribute (e.g. ``[\"t\", \"q\", \"z\"]``).\nremote:         If set, delegates computation to the listener at this URL\n                (e.g. ``\"http://gpu01:8765\"`` or\n                ``\"http://localhost:8765\"`` for an SSH-tunnelled cluster).\n                If ``None``, runs in-process on the local GPU.\ncheckpoint_path:Override the default checkpoint path (local mode only).\ntimeframes:     Number of consecutive timeframes to compute.  Values\n                greater than 1 return one multi-frame XiaResult.\nstep_hours:     Hours between consecutive timeframes when timeframes > 1.\nlevels:         Pressure levels (hPa) to return attribution for, e.g.\n                ``[925, 850, 700]``.  ``None`` (the default) returns every\n                level in :data:`AURORA_LEVELS`.  Only affects atmospheric\n                input variables; surface variables are unaffected.  The\n                single backward pass computes gradients for all levels\n                regardless, so this filters the output rather than reducing\n                GPU cost.\n**options:      No other method-specific options for saliency.\n\nReturns\n-------\nXiaResult\n    One frame, or a multi-frame bundle when ``timeframes > 1``."
+        },
+        {
+          "name": "run_ig",
+          "qualified_name": "geoxplain_aurora_adapter.api.methods.run_ig",
+          "kind": "function",
+          "signature": "(target: 'TargetSpec', input: 'list[str]', *, remote: 'Optional[str]' = None, checkpoint_path: 'Optional[str]' = None, timeframes: 'int' = 1, step_hours: 'int' = 6, n_steps: 'int' = 32, baseline_sigma_deg: 'float' = 2.5, levels: 'Optional[int | list[int]]' = None, **options) -> 'XiaResult'",
+          "description": "Compute Integrated Gradients attribution.\n\nParameters\n----------\ntarget:             What scalar to explain.\ninput:              Input variable names to attribute.\nremote:             Listener URL, or ``None`` for in-process.\ncheckpoint_path:    Override checkpoint path (local mode only).\ntimeframes:         Number of consecutive timeframes to compute.\nstep_hours:         Hours between consecutive timeframes when timeframes > 1.\nn_steps:            Number of integration steps (midpoint Riemann rule).\nbaseline_sigma_deg: Gaussian sigma (degrees latitude) for the smoothed baseline.\nlevels:             Pressure levels (hPa) to return attribution for, e.g.\n                    ``[925, 850, 700]``.  ``None`` (the default) returns\n                    every level in :data:`AURORA_LEVELS`.  Only affects\n                    atmospheric input variables; surface variables are\n                    unaffected.  Each integration step's backward pass\n                    computes gradients for all levels regardless, so this\n                    filters the output rather than reducing GPU cost.\n\nReturns\n-------\nXiaResult\n    One frame, or a multi-frame bundle when ``timeframes > 1``."
+        },
+        {
+          "name": "run_rise",
+          "qualified_name": "geoxplain_aurora_adapter.api.methods.run_rise",
+          "kind": "function",
+          "signature": "(target: 'TargetSpec', input: 'list[str]', *, remote: 'Optional[str]' = None, checkpoint_path: 'Optional[str]' = None, timeframes: 'int' = 1, step_hours: 'int' = 6, n_masks: 'int' = 1200, cells_h: 'int' = 400, cells_w: 'int' = 800, seed: 'int' = 42, baseline_sigma_deg: 'float' = 2.5, **options) -> 'XiaResult'",
+          "description": "Compute RISE (Randomized Input Sampling for Explanation) attribution.\n\nParameters\n----------\ntarget:             What scalar to explain.\ninput:              Input variable names to attribute.\nremote:             Listener URL, or ``None`` for in-process.\ncheckpoint_path:    Override checkpoint path (local mode only).\ntimeframes:         Number of consecutive timeframes to compute.\nstep_hours:         Hours between consecutive timeframes when timeframes > 1.\nn_masks:            Number of random masks.\ncells_h/cells_w:    Low-resolution grid dimensions for mask upsampling.\nseed:               Random seed for mask generation.\nbaseline_sigma_deg: Gaussian sigma for the smoothed baseline field.\n\nReturns\n-------\nXiaResult\n    One frame, or a multi-frame bundle when ``timeframes > 1``."
+        },
+        {
+          "name": "run_vit_cx",
+          "qualified_name": "geoxplain_aurora_adapter.api.methods.run_vit_cx",
+          "kind": "function",
+          "signature": "(target: 'TargetSpec', input: 'list[str]', *, remote: 'Optional[str]' = None, checkpoint_path: 'Optional[str]' = None, timeframes: 'int' = 1, step_hours: 'int' = 6, hook_stage: 'int' = 1, n_clusters: 'int' = 4096, smooth_sigma: 'float | tuple | None' = 0, baseline_sigma_deg: 'float' = 2.5, **options) -> 'XiaResult'",
+          "description": "Compute ViT-CX (cluster-based causal attribution) attribution.\n\nParameters\n----------\ntarget:             What scalar to explain.\ninput:              Input variable names to attribute.\nremote:             Listener URL, or ``None`` for in-process.\ncheckpoint_path:    Override checkpoint path (local mode only).\ntimeframes:         Number of consecutive timeframes to compute.\nstep_hours:         Hours between consecutive timeframes when timeframes > 1.\nhook_stage:         Aurora encoder stage to hook (0-2; default 1).\nn_clusters:         Fixed cluster budget = number of occlusion forward passes\n                    per variable.  Bounds run cost regardless of input.\nsmooth_sigma:       Gaussian post-smoothing of the upsampled attribution map.\n                    Default ``0`` disables smoothing and keeps the raw\n                    cluster map.  A non-zero scalar applies the same sigma\n                    to both axes; a ``(lat, lon)`` pair sets them\n                    independently.\nbaseline_sigma_deg: Gaussian sigma for the smoothed baseline field.\n\nReturns\n-------\nXiaResult\n    One frame, or a multi-frame bundle when ``timeframes > 1``."
+        },
+        {
+          "name": "run_rollout",
+          "qualified_name": "geoxplain_aurora_adapter.api.methods.run_rollout",
+          "kind": "function",
+          "signature": "(target: 'TargetSpec', input: 'list[str]', *, method: 'str' = 'saliency', timeframes: 'int', remote: 'Optional[str]' = None, checkpoint_path: 'Optional[str]' = None, n_steps: 'int' = 32, baseline_sigma_deg: 'float' = 2.5, timeout_s: 'float' = 1800.0, poll_interval_s: 'float' = 2.0, poll_max_s: 'float' = 30.0) -> 'XiaResult'",
+          "description": "Compute autoregressive rollout XIA in fixed six-hour Aurora frames.\n\nParameters\n----------\ntarget:\n    Scalar output target for the first frame.\ninput:\n    Input variable names to attribute.\nmethod:\n    ``\"saliency\"`` or ``\"ig\"``. RISE and ViT-CX are recognized method\n    identifiers but are not implemented for rollout.\ntimeframes:\n    Required positive number of autoregressive frames.\nremote:\n    Listener URL, or ``None`` for in-process execution.\ncheckpoint_path:\n    Override the default checkpoint in local mode only.\nn_steps, baseline_sigma_deg:\n    Integrated Gradients options, ignored for Saliency.\ntimeout_s, poll_interval_s, poll_max_s:\n    Remote-client timeout and polling controls.\n\nReturns\n-------\nXiaResult\n    One bundle containing all rollout frames.\n\nRaises\n------\nValueError\n    If ``method`` is unknown or ``timeframes`` is not positive.\nNotImplementedError\n    If rollout is requested with RISE or ViT-CX."
+        },
+        {
+          "name": "listen_for_request",
+          "qualified_name": "geoxplain_aurora_adapter.api.listener.listen_for_request",
+          "kind": "function",
+          "signature": "(port: 'int' = 8765, host: 'str' = '127.0.0.1', persistent: 'bool' = False, prewarm: 'bool' = False, memory_retention: 'Optional[str]' = None, result_retention: 'Optional[str]' = None, **sbatch_kwargs) -> 'None'",
+          "description": "Start the geoxplain_aurora_adapter HTTP listener server.\n\nMode is auto-detected:\n\n+------------------+------------------+---------------------------------+\n| GPU visible?     | sbatch on PATH?  | Resolved mode                   |\n+==================+==================+=================================+\n| yes              | yes              | sbatch-oneshot (or sbatch-persistent if persistent) |\n| no               | yes              | sbatch-oneshot (or sbatch-persistent if persistent) |\n| yes              | no               | gpu-listener                    |\n| no               | no               | Error                           |\n+------------------+------------------+---------------------------------+\n\nParameters\n----------\nport:           TCP port to listen on (default 8765).\nhost:           Bind address (default ``\"127.0.0.1\"`` — loopback only; the\n                HTTP API is unauthenticated, so reach it via an SSH tunnel.\n                Pass ``\"0.0.0.0\"`` only on a trusted/firewalled network).\npersistent:     Opt into sbatch-persistent (persistent GPU worker) instead of the\n                default sbatch-oneshot (one sbatch per request).\nprewarm:        sbatch-persistent only — submit the GPU worker job immediately\n                rather than waiting for the first request.\nmemory_retention: How long completed jobs and cached result bytes live in the\n                listener's memory (default ``\"1h\"``; ``\"never\"`` disables).\nresult_retention: sbatch-oneshot only — how long on-disk result directories\n                are kept (default ``\"never\"``).\n**sbatch_kwargs: Forwarded to ``SbatchConfig`` (account, partition, etc.).\n                Also accepted as CLI flags by ``geoxplain-aurora-adapter listen``."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+# GeoXplain
+
+> GeoXplain is an interactive Python-based visualization toolkit for exploring geospatial attribution maps across climate variables, atmospheric pressure layers, and forecast time. It features a model-agnostic viewer for geospatial XAI attributions. It loads raw arrays and compatible result bundles without importing a model. `geoxplain_aurora_adapter` is the first packaged backend and has a separate documentation section for Aurora computation and deployment.
+
+## GeoXplain core
+
+- [Quickstart](getting-started/quickstart.md): load a `.xia.npz` result into Jupyter or a standalone viewer.
+- [Visualize results](guides/visualize-results.md): accepted source forms, levels, targets, options, export, and screenshots.
+- [Weather overlays](guides/overlays.md): NPZ, NetCDF, array, and compatible backend inputs.
+- [Architecture](concepts/architecture.md): the boundary between model-specific computation and model-agnostic presentation.
+- [Data model](concepts/data-model.md): result protocols and persisted interchange formats.
+
+## Aurora backend
+
+- [Backend overview](backends/aurora.md): responsibilities and the end-to-end flow.
+- [Compute attributions](guides/compute-attributions.md): Aurora targets, methods, batches, and rollouts.
+- [Attribution methods](concepts/methods.md): Aurora implementations and cost controls.
+- [Remote execution](guides/remote-execution.md): Aurora listener modes and Python dispatch.
+
+## Exact interfaces
+
+- [GeoXplain Python API](reference/geoxplain.md)
+- [Aurora adapter Python API](reference/aurora-adapter.md)
+- [Aurora HTTP API](reference/http-api.md)
+- [Generated API inventory](api-reference.json)
+- [Consolidated generated reference](llms-full.txt)
+
+## High-level selection rules
+
+- Use `GeoXplainWidget` in Jupyter and `GeoXplain` for scripts or standalone browser viewing.
+- Pass `XiaResult` directly to `add_attribution()`; do not repeat its method, target, timestamp, level, normalization, or labels.
+- Use exactly one of `level` and `pressure_level` for a single raw attribution grid.
+- GeoXplain accepts any method label; its viewer is not limited to the methods implemented by the Aurora backend.
+- For the Aurora backend, omit `remote` only when the caller has a visible GPU and the local profile.
+- Aurora's `run_rollout()` currently implements only `saliency` and `ig`.

@@ -1,0 +1,25 @@
+/*
+ * CSS for the anywidget bundle. It reuses the standalone viewer styles, then
+ * neutralizes the few global Tailwind base rules that affect notebook hosts.
+ */
+
+@import '../index.css';
+@import 'maplibre-gl/dist/maplibre-gl.css';
+
+/* Prevent the Tailwind base body rule from overriding the host notebook/IDE background */
+body {
+  background-color: transparent !important;
+  color: inherit !important;
+}
+
+@supports selector(:has(*)) {
+  .jp-OutputArea-output:has(.geoxplain-widget-host),
+  .jp-OutputArea-child:has(.geoxplain-widget-host),
+  .cell-output-container:has(.geoxplain-widget-host),
+  .cell-output-ipywidget-background:has(.geoxplain-widget-host),
+  .output:has(.geoxplain-widget-host),
+  .output-item:has(.geoxplain-widget-host) {
+    background: var(--background) !important;
+    background-color: var(--background) !important;
+  }
+}

@@ -1,0 +1,56 @@
+# ── Viewer (React / Vite)
+viewer/node_modules
+viewer/dist
+viewer/dist-ssr
+viewer/*.local
+
+# Generated at runtime by the Python package — not committed.
+# Catch-all: viewer_data.json is always generated, never source.
+viewer_data.json
+viewer/public/viewer_data.json
+geoxplain/static/viewer_data.json
+
+# ── Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+uv.lock
+site/
+.ruff_cache
+.pytest_cache
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ── Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+example_input/copy.sh
+
+# ── Generated at runtime by the Python package — never commit
+# Per-widget standalone browser bundles (a full viewer copy per widget instance).
+.geoxplain/
+# Default screenshot() output directory.
+screenshots/
+.codegraph/
+AGENTS.md
+CLAUDE.md
