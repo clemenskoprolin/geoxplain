@@ -1,8 +1,14 @@
 # GeoXplain
 
+![GeoXplain: an interactive geospatial attribution viewer driven from a notebook](images/header.png)
+
 GeoXplain is a interactive Python-based visualization toolkit for exploring geospatial attribution maps across climate variables, atmospheric pressure layers, and forecast time. The `geoxplain` package accepts raw arrays or objects that satisfy its small result protocols, then lets you compare attribution methods, variables, vertical levels, and time frames in a Jupyter widget or standalone browser viewer.
 
 Explanation computation is deliberately outside the viewer. You can use your own model and XAI library, load a saved `.xia.npz` bundle, or connect a model-specific backend. The first packaged backend is `geoxplain-aurora-adapter`, which computes explanations and weather overlays for Microsoft Aurora locally or through a remote listener.
+
+![The GeoXplain workflow: specify a target in a notebook, compute with a model-specific backend, explore in the model-agnostic viewer](images/overview.png)
+
+*A single workflow in three stages. In the notebook **(1)** you specify a target and input variables. A model-specific backend such as the Aurora adapter **(2)** computes the explanation — locally, on a GPU listener, or on an HPC batch queue — and returns a self-describing `.xia.npz` result bundle. The model-agnostic GeoXplain viewer **(3)** explores that result across space, pressure levels, and forecast time. Refining the target or switching methods stays in the same notebook session.*
 
 ## Choose the right entry point
 

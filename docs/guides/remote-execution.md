@@ -2,6 +2,10 @@
 
 Remote execution is a capability of `geoxplain-aurora-adapter`, not a requirement of the GeoXplain viewer. The backend keeps local and remote Aurora computation behind the same `run_*` API. Omitting `remote` uses the current process and requires a visible GPU. Supplying a URL sends the request to an HTTP listener and polls until a result is available.
 
+![Notebook client, login-node listener, and GPU worker exchanging HTTP requests and responses across an SSH tunnel](../images/remote-architecture.png)
+
+*What `remote="http://..."` sets in motion. The notebook client (left, on your machine) `POST`s a job, polls `GET /jobs/{id}` for status, ETA, and logs, then fetches packed result bytes — all over an SSH tunnel. On HPC, the listener hands the actual computation to a GPU worker through SLURM (`sbatch`/`srun`) and returns the result. Solid arrows are requests, dashed arrows are responses.*
+
 ## Start a listener
 
 After configuring a `gpu-listener` or `login-node` setup profile:

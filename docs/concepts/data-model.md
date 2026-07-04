@@ -1,5 +1,9 @@
 # Data model and file formats
 
+![The on-disk layout of an attribution bundle and an overlay bundle, with their meta.json fields](../images/result-bundles.png)
+
+*The two persisted formats side by side. An attribution bundle (`.xia.npz`, left) stores a `meta.json` manifest plus one `.npy` array per frame, input variable, and vertical layer. An overlay bundle (`.overlay.npz`, right) stores one weather field over time with display metadata and optional coordinate vectors. Both are zip archives; every array is `float32` on the ERA5 `(721, 1440)` grid.*
+
 ## Attribution levels
 
 Attributions are organized as:

@@ -2,6 +2,10 @@
 
 Overlays place a weather field beneath or alongside the attribution rendering. GeoXplain accepts in-memory arrays, saved `.overlay.npz` bundles, and NetCDF variables directly. A compatible model backend may also return an overlay result.
 
+![Attribution contours drawn over an 850 hPa temperature field (left) and an 850 hPa wind field (right)](../images/viewer-example.png)
+
+*Overlays give the attribution physical context. Here the attribution is drawn as contour lines on top of a weather overlay: an 850 hPa temperature field (left) and, for a later rollout step, an 850 hPa horizontal wind field (right). Each overlay carries its own colormap, opacity, and value range, set from the overlay panel and configurable through the arguments below.*
+
 ## Add an array
 
 ```python

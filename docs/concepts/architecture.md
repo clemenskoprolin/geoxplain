@@ -2,6 +2,13 @@
 
 GeoXplain deliberately separates model-specific computation from model-agnostic visual analysis. The stable center is the viewer and its result protocols, not a particular model or explanation method.
 
+![Model-specific computation on the left, a self-describing result bundle in the middle, and the model-agnostic viewer on the right](../images/overview.png)
+
+*GeoXplain separates interactive visual analysis from model-specific computation. In the notebook (1), the analyst specifies the target and
+input variables. The model-specific Aurora adapter (2) turns this target specification into a result bundle containing attribution time frames and
+metadata. The model-agnostic GeoXplain viewer (3) renders the bundle in a notebook widget or standalone browser view. This example shows how
+the specific humidity at 850 hPa around Zurich is explained using humidity and temperature at 850 and 700 hPa..*
+
 ```text
 model + explanation code
   custom code or a packaged backend

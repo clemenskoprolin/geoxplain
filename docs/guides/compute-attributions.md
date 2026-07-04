@@ -2,6 +2,10 @@
 
 GeoXplain does not prescribe how attributions are computed. This guide covers its first packaged backend, `geoxplain-aurora-adapter`, which exposes one function per supported Aurora XAI method. Every function accepts a `TargetSpec`, a list of input variables to attribute, and the same local-or-remote dispatch choice.
 
+![Integrated Gradients attributions for an 850 hPa humidity target over Zurich, shown as contour lines over a weather overlay](../images/viewer-example.png)
+
+*A computed result in the viewer. Left: Integrated Gradients attributions for an 850 hPa humidity target over Zurich (box, in blue), rendered as contour lines over an 850 hPa temperature overlay — red is positive, blue is negative attribution. Right: the second step of an autoregressive rollout of the same target, where influence has shifted upstream. The target, method, and input variables you set below are exactly what these frames explain.*
+
 ## Define the target
 
 A target is the scalar model output being explained. Point targets use the nearest grid point; box targets explain the mean over a rectangular region.
