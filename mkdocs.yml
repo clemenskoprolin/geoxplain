@@ -87,6 +87,7 @@ nav:
       - Compute attributions: guides/compute-attributions.md
       - Attribution methods: concepts/methods.md
       - Run remotely: guides/remote-execution.md
+      - Adapt to another model: backends/adapt-another-model.md
       - Aurora adapter Python API: reference/aurora-adapter.md
       - HTTP API: reference/http-api.md
       - Command line: reference/cli.md

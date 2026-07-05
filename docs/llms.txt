@@ -16,6 +16,7 @@
 - [Compute attributions](guides/compute-attributions.md): Aurora targets, methods, batches, and rollouts.
 - [Attribution methods](concepts/methods.md): Aurora implementations and cost controls.
 - [Remote execution](guides/remote-execution.md): Aurora listener modes and Python dispatch.
+- [Adapt to another model](backends/adapt-another-model.md): build a backend for a different model by cloning the adapter.
 
 ## Exact interfaces
 

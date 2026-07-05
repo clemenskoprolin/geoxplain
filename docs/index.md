@@ -72,6 +72,10 @@ widget
 
 Without `remote=`, computation runs in the notebook process and requires a visible GPU. Supplying a listener URL keeps the same Python call site while moving computation to a GPU or SLURM-backed service.
 
+## Bring your own model
+
+The viewer works with any backend that produces compatible results, and the Aurora adapter is designed to be a template: clone it, swap the model, data loading, and targets, and keep the dispatch, remote execution, and serialization machinery. See [adapt the adapter to another model](backends/adapt-another-model.md).
+
 ## Documentation map
 
 - Start with the [quickstart](getting-started/quickstart.md) to load an existing result.
