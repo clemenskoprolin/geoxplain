@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from collections.abc import Mapping, Sequence
-from typing import Any, Optional, TypeVar
+from typing import Any, Optional
 
 import numpy as np
 
@@ -50,8 +50,6 @@ AttributionGrid = str | os.PathLike[str] | np.ndarray
 AttributionSource = AttributionGrid | Mapping[str, AttributionGrid] | XiaResultProtocol
 RawOverlaySource = str | os.PathLike[str] | np.ndarray
 OverlaySource = RawOverlaySource | OverlayResultProtocol
-
-_BaseT = TypeVar('_BaseT', bound='GeoXplainBase')
 
 
 class _DefaultMethod:
@@ -99,7 +97,7 @@ class GeoXplainBase:
         self._viewer_options = dict(viewer_options or {})
 
     def add_attribution(
-        self: _BaseT,
+        self,
         source: AttributionSource,
         *,
         level: str | None = None,
@@ -111,7 +109,7 @@ class GeoXplainBase:
         label: str | None = None,
         layer_labels: Mapping[str, str] | None = None,
         colormap: Any = None,
-    ) -> _BaseT:
+    ) -> None:
         """Add attribution data to the viewer.
 
         Parameters
@@ -156,11 +154,6 @@ class GeoXplainBase:
             Attribution preset name or custom color stops. This may override a
             result bundle's display colormap.
 
-        Returns
-        -------
-        GeoXplainBase
-            This viewer instance, for method chaining.
-
         Raises
         ------
         TypeError
@@ -168,15 +161,6 @@ class GeoXplainBase:
         ValueError
             If a level, pressure level, normalization, target, method, or
             colormap is invalid.
-
-        Notes
-        -----
-        Mutating methods return the viewer so calls can be chained. In a
-        Jupyter notebook this means ending a cell with a bare mutating call
-        re-renders an already-displayed widget as a second copy. Append a
-        semicolon to suppress that extra output::
-
-            widget.add_attribution(result);
         """
 
         method_was_specified = method is not _DEFAULT_METHOD
@@ -218,7 +202,7 @@ class GeoXplainBase:
                         _progress_reporter=progress,
                     )
             self._sync()
-            return self
+            return
 
         if isinstance(source, Mapping):
             if level is not None:
@@ -236,7 +220,7 @@ class GeoXplainBase:
                 colormap=colormap,
             )
             self._sync()
-            return self
+            return
 
         if isinstance(source, (str, os.PathLike, np.ndarray)):
             if layer_labels is not None:
@@ -252,21 +236,20 @@ class GeoXplainBase:
                 colormap=colormap,
             )
             self._sync()
-            return self
+            return
 
         raise TypeError(
             'source must be an array, path, level mapping, '
             'or XiaResult-compatible object'
         )
 
-    def clear_attributions(self: _BaseT) -> _BaseT:
+    def clear_attributions(self) -> None:
         """Remove attribution methods, frames, targets, and level data."""
         self._methods = {}
         self._sync()
-        return self
 
     def add_overlay(
-        self: _BaseT,
+        self,
         source: OverlaySource,
         *,
         variable: str | None = None,
@@ -279,7 +262,7 @@ class GeoXplainBase:
         stretch: tuple[float, float] | Sequence[float] | None = None,
         offset_hours: int | None = None,
         time_label: str | None = None,
-    ) -> _BaseT:
+    ) -> None:
         """Add a weather overlay to the viewer.
 
         Parameters
@@ -323,26 +306,12 @@ class GeoXplainBase:
             time t2"`` for ``+6``). For an ``OverlayResult`` source it defaults
             to the bundle's recorded label.
 
-        Returns
-        -------
-        GeoXplainBase
-            This viewer instance, for method chaining.
-
         Raises
         ------
         TypeError
             If the source form conflicts with ``variable``.
         ValueError
             If required metadata, dimensions, or the colormap is invalid.
-
-        Notes
-        -----
-        Mutating methods return the viewer so calls can be chained. In a
-        Jupyter notebook this means ending a cell with a bare mutating call
-        re-renders an already-displayed widget as a second copy. Append a
-        semicolon to suppress that extra output::
-
-            widget.add_overlay(overlay);
         """
 
         normalized_timestamps = _normalize_timestamps(timestamps)
@@ -369,7 +338,7 @@ class GeoXplainBase:
                 time_label=time_label if time_label is not None else imported.time_label,
             )
             self._sync()
-            return self
+            return
 
         if isinstance(source, (str, os.PathLike)):
             if variable is None:
@@ -392,7 +361,7 @@ class GeoXplainBase:
                 time_label=time_label,
             )
             self._sync()
-            return self
+            return
 
         if isinstance(source, np.ndarray):
             if variable is not None:
@@ -410,40 +379,37 @@ class GeoXplainBase:
                 time_label=time_label,
             )
             self._sync()
-            return self
+            return
 
         raise TypeError(
             'source must be an array, NetCDF path, '
             'or OverlayResult-compatible object'
         )
 
-    def clear_overlays(self: _BaseT) -> _BaseT:
+    def clear_overlays(self) -> None:
         """Remove overlays only."""
         self._overlays = {}
         self._sync()
-        return self
 
-    def set_title(self: _BaseT, title: str) -> _BaseT:
+    def set_title(self, title: str) -> None:
         """Set the application title shown in the viewer header."""
         self._title = _normalize_app_title(title)
         self._after_options_changed({'appTitle': self._title})
         self._sync()
-        return self
 
-    def set_subtitle(self: _BaseT, subtitle: str | None) -> _BaseT:
+    def set_subtitle(self, subtitle: str | None) -> None:
         """Set the optional application subtitle shown below the title."""
         self._subtitle = _normalize_app_subtitle(subtitle)
         self._after_options_changed({'appSubtitle': self._subtitle})
         self._sync()
-        return self
 
     def set_options(
-        self: _BaseT,
+        self,
         *,
         view_mode: str | None = None,
         map_type: str | None = None,
         **options: Any,
-    ) -> _BaseT:
+    ) -> None:
         """Update viewer options using Python-style names.
 
         Parameters
@@ -461,11 +427,6 @@ class GeoXplainBase:
             ``smooth`` (or ``smooth_imported_grids``), and
             ``smooth_imported_grid_sigma``. Other snake-case names are
             converted to camel case before being sent to the frontend.
-
-        Returns
-        -------
-        GeoXplainBase
-            This viewer instance, for method chaining.
         """
         if view_mode is not None:
             options['view_mode'] = view_mode
@@ -486,14 +447,12 @@ class GeoXplainBase:
             self._after_options_changed(frontend_options)
 
         self._sync()
-        return self
 
-    def clear(self: _BaseT) -> _BaseT:
+    def clear(self) -> None:
         """Remove attribution and overlay data while keeping configuration."""
         self._methods = {}
         self._overlays = {}
         self._sync()
-        return self
 
     def _build_payload(self) -> dict:
         return build_json(

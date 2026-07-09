@@ -253,8 +253,8 @@ class GeoXplain(GeoXplainBase):
         if self._out_path is not None:
             self._export_to_path(self._out_path)
 
-    def remove_export(self) -> 'GeoXplain':
-        """Delete the configured JSON export and return this viewer.
+    def remove_export(self) -> None:
+        """Delete the configured JSON export.
 
         A no-op when no ``out_path`` was configured. In-memory attributions and
         overlays are never cleared.
@@ -262,7 +262,6 @@ class GeoXplain(GeoXplainBase):
         path = self.export_path
         if path is not None:
             path.unlink(missing_ok=True)
-        return self
 
     def screenshot(
         self,

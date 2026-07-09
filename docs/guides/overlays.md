@@ -21,15 +21,7 @@ widget.add_overlay(
 
 A two-dimensional array creates one frame. A three-dimensional array is interpreted as `(time, latitude, longitude)` and creates one frame per first-axis element.
 
-!!! tip "Avoid a duplicate view"
-
-    `add_overlay()` returns the widget for chaining, so ending a notebook cell
-    with a bare call re-renders an already-displayed widget as a second copy.
-    End the line with a semicolon to suppress that extra output:
-
-    ```python
-    widget.add_overlay(humidity, name="Specific humidity");
-    ```
+`add_overlay()` updates the widget in place and returns `None`; an already-displayed widget refreshes automatically.
 
 ## Load a saved overlay
 

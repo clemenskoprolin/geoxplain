@@ -72,7 +72,7 @@ from geoxplain.xia_result import load_xia_result
 
 result = load_xia_result("zurich.xia.npz")  # can be found in examples
 
-widget = GeoXplainWidget(title="Ticino attribution", height=720)  # both optional
+widget = GeoXplainWidget(title="Zurich attribution", height=720)  # both optional
 widget.add_attribution(result)
 widget
 ```

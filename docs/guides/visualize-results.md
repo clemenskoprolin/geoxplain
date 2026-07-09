@@ -107,17 +107,7 @@ widget.set_options(
 
 `view_mode="heatmap"` and `view_mode="contours"` select the attribution depiction. `map_type="map"` and `map_type="globe"` select the renderer. `basemap` accepts `"topo"` or `"satellite"`.
 
-!!! tip "Avoid a duplicate view"
-
-    Every mutating method (`add_attribution()`, `add_overlay()`, `set_options()`,
-    `set_title()`, …) returns the widget so calls can be chained. In a Jupyter
-    notebook this means ending a cell with a bare mutating call re-renders an
-    already-displayed widget as a second copy. End the line with a semicolon to
-    suppress that extra output:
-
-    ```python
-    widget.set_options(map_type="globe");
-    ```
+Every mutating method (`add_attribution()`, `add_overlay()`, `set_options()`, `set_title()`, …) updates the widget in place and returns `None`; an already-displayed widget refreshes automatically.
 
 Attribution colormap presets are `default`, `rdbu`, `coolwarm`, `purple-green`, `reds`, `viridis`, `plasma`, `magma`, `inferno`, and `cividis`. A custom attribution colormap is a sequence of two to eight hex colors, or `(position, color)` pairs with strictly increasing positions from zero to one.
 

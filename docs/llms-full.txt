@@ -104,11 +104,11 @@ Returns
 pathlib.Path
     Path to the bundle's ``index.html``.
 
-#### `GeoXplain.remove_export(self) -> 'GeoXplain'`
+#### `GeoXplain.remove_export(self) -> None`
 
 Kind: method.
 
-Delete the configured JSON export and return this viewer.
+Delete the configured JSON export.
 
 A no-op when no ``out_path`` was configured. In-memory attributions and
 overlays are never cleared.
@@ -242,7 +242,7 @@ Qualified name: `geoxplain._base.GeoXplainBase`. Kind: class.
 
 Shared API for standalone and widget GeoXplain viewers.
 
-#### `GeoXplainBase.add_attribution(self: '_BaseT', source: 'AttributionSource', *, level: 'str | None' = None, pressure_level: 'int | None' = None, method: 'str | _DefaultMethod' = 'saliency', timestamp: 'str | None' = None, target: 'Any' = <object object>, norm: 'str | None' = None, label: 'str | None' = None, layer_labels: 'Mapping[str, str] | None' = None, colormap: 'Any' = None) -> '_BaseT'`
+#### `GeoXplainBase.add_attribution(self, source: 'AttributionSource', *, level: 'str | None' = None, pressure_level: 'int | None' = None, method: 'str | _DefaultMethod' = 'saliency', timestamp: 'str | None' = None, target: 'Any' = <object object>, norm: 'str | None' = None, label: 'str | None' = None, layer_labels: 'Mapping[str, str] | None' = None, colormap: 'Any' = None) -> 'None'`
 
 Kind: method.
 
@@ -290,11 +290,6 @@ colormap:
     Attribution preset name or custom color stops. This may override a
     result bundle's display colormap.
 
-Returns
--------
-GeoXplainBase
-    This viewer instance, for method chaining.
-
 Raises
 ------
 TypeError
@@ -303,22 +298,13 @@ ValueError
     If a level, pressure level, normalization, target, method, or
     colormap is invalid.
 
-Notes
------
-Mutating methods return the viewer so calls can be chained. In a
-Jupyter notebook this means ending a cell with a bare mutating call
-re-renders an already-displayed widget as a second copy. Append a
-semicolon to suppress that extra output::
-
-    widget.add_attribution(result);
-
-#### `GeoXplainBase.clear_attributions(self: '_BaseT') -> '_BaseT'`
+#### `GeoXplainBase.clear_attributions(self) -> 'None'`
 
 Kind: method.
 
 Remove attribution methods, frames, targets, and level data.
 
-#### `GeoXplainBase.add_overlay(self: '_BaseT', source: 'OverlaySource', *, variable: 'str | None' = None, name: 'str | None' = None, unit: 'str | None' = None, colormap: 'Any' = None, timestamps: 'Sequence[str | None] | None' = None, visible: 'bool | None' = None, opacity: 'float | None' = None, stretch: 'tuple[float, float] | Sequence[float] | None' = None, offset_hours: 'int | None' = None, time_label: 'str | None' = None) -> '_BaseT'`
+#### `GeoXplainBase.add_overlay(self, source: 'OverlaySource', *, variable: 'str | None' = None, name: 'str | None' = None, unit: 'str | None' = None, colormap: 'Any' = None, timestamps: 'Sequence[str | None] | None' = None, visible: 'bool | None' = None, opacity: 'float | None' = None, stretch: 'tuple[float, float] | Sequence[float] | None' = None, offset_hours: 'int | None' = None, time_label: 'str | None' = None) -> 'None'`
 
 Kind: method.
 
@@ -365,11 +351,6 @@ time_label:
     time t2"`` for ``+6``). For an ``OverlayResult`` source it defaults
     to the bundle's recorded label.
 
-Returns
--------
-GeoXplainBase
-    This viewer instance, for method chaining.
-
 Raises
 ------
 TypeError
@@ -377,34 +358,25 @@ TypeError
 ValueError
     If required metadata, dimensions, or the colormap is invalid.
 
-Notes
------
-Mutating methods return the viewer so calls can be chained. In a
-Jupyter notebook this means ending a cell with a bare mutating call
-re-renders an already-displayed widget as a second copy. Append a
-semicolon to suppress that extra output::
-
-    widget.add_overlay(overlay);
-
-#### `GeoXplainBase.clear_overlays(self: '_BaseT') -> '_BaseT'`
+#### `GeoXplainBase.clear_overlays(self) -> 'None'`
 
 Kind: method.
 
 Remove overlays only.
 
-#### `GeoXplainBase.set_title(self: '_BaseT', title: 'str') -> '_BaseT'`
+#### `GeoXplainBase.set_title(self, title: 'str') -> 'None'`
 
 Kind: method.
 
 Set the application title shown in the viewer header.
 
-#### `GeoXplainBase.set_subtitle(self: '_BaseT', subtitle: 'str | None') -> '_BaseT'`
+#### `GeoXplainBase.set_subtitle(self, subtitle: 'str | None') -> 'None'`
 
 Kind: method.
 
 Set the optional application subtitle shown below the title.
 
-#### `GeoXplainBase.set_options(self: '_BaseT', *, view_mode: 'str | None' = None, map_type: 'str | None' = None, **options: 'Any') -> '_BaseT'`
+#### `GeoXplainBase.set_options(self, *, view_mode: 'str | None' = None, map_type: 'str | None' = None, **options: 'Any') -> 'None'`
 
 Kind: method.
 
@@ -426,12 +398,7 @@ map_type:
     ``smooth_imported_grid_sigma``. Other snake-case names are
     converted to camel case before being sent to the frontend.
 
-Returns
--------
-GeoXplainBase
-    This viewer instance, for method chaining.
-
-#### `GeoXplainBase.clear(self: '_BaseT') -> '_BaseT'`
+#### `GeoXplainBase.clear(self) -> 'None'`
 
 Kind: method.
 

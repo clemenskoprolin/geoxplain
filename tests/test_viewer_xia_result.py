@@ -100,13 +100,9 @@ class GeoXplainXiaResultTests(unittest.TestCase):
             out_path = Path(tmp) / 'viewer_data.json'
             viewer = GeoXplain(out_path=str(out_path))
 
-            returned = (
-                viewer
-                .add_attribution(_array(), pressure_level=850)
-                .set_title('Operational Diagnostics')
-                .set_subtitle(None)
-            )
-            self.assertIs(returned, viewer)
+            viewer.add_attribution(_array(), pressure_level=850)
+            viewer.set_title('Operational Diagnostics')
+            viewer.set_subtitle(None)
 
             data = _read_json(out_path)
             self.assertEqual(data['appTitle'], 'Operational Diagnostics')
@@ -266,9 +262,7 @@ class GeoXplainXiaResultTests(unittest.TestCase):
 
             viewer.add_attribution(_array(), pressure_level=850)
             self.assertTrue(out_path.exists())
-            returned = viewer.remove_export()
-
-            self.assertIs(returned, viewer)
+            self.assertIsNone(viewer.remove_export())
             self.assertFalse(out_path.exists())
 
     def test_default_viewer_does_not_write_on_mutation(self) -> None:
@@ -302,7 +296,7 @@ class GeoXplainXiaResultTests(unittest.TestCase):
         viewer = GeoXplain()
         viewer.add_attribution(_array(), pressure_level=850)
 
-        self.assertIs(viewer.remove_export(), viewer)
+        self.assertIsNone(viewer.remove_export())
 
     def test_export_browser_writes_bundle_and_data(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

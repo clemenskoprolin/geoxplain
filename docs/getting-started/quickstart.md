@@ -33,28 +33,20 @@ with viewer.open() as handle:
 
 ## Add more data
 
-All mutating viewer methods return the viewer, so calls can be chained:
+Mutating viewer methods update the widget in place and return `None`. Call
+them one after another, an already-displayed widget refreshes automatically:
 
 ```python
 from geoxplain.overlay_result import load_overlay_result
 
 overlay = load_overlay_result("humidity.overlay.npz")
 
-widget.add_attribution(result).add_overlay(overlay).set_options(
+widget.add_attribution(result)
+widget.add_overlay(overlay)
+widget.set_options(
     map_type="globe",
     view_mode="contours",
 )
 ```
-
-!!! tip "Avoid a duplicate view"
-
-    Because these methods return the widget, ending a notebook cell with a
-    bare mutating call renders a *second* copy of an already-displayed widget.
-    When the widget is already shown in another cell, end the line with a
-    semicolon to suppress that extra output:
-
-    ```python
-    widget.add_overlay(overlay);
-    ```
 
 Continue with [visualize results](../guides/visualize-results.md) for raw arrays and level mappings. If Aurora is your model backend, see the [Aurora backend overview](../backends/aurora.md) before computing a new result.
