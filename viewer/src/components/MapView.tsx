@@ -58,6 +58,10 @@ interface MapViewProps {
   externalGrids?: Record<string, DenseLevelGrid> | null
   diverging?: boolean
   absolute?: boolean
+  /** Per-level normalization rescale factors for the current frame (≤ 1 each). */
+  normScales?: Record<string, number> | null
+  /** Per-level normalization rescale factors for the prefetched next frame. */
+  nextNormScales?: Record<string, number> | null
   colorScheme?: AttributionColorScheme
   contours?: boolean
   /** Triggers map.resize() after returning from display:none. */
@@ -89,6 +93,8 @@ export default function MapView({
   externalGrids,
   diverging = false,
   absolute = false,
+  normScales = null,
+  nextNormScales = null,
   colorScheme = DEFAULT_ATTRIBUTION_COLOR_SCHEME,
   contours = false,
   initialCenter,
@@ -124,6 +130,8 @@ export default function MapView({
   const externalGridsRef  = useRef(externalGrids)
   const divergingRef      = useRef(diverging)
   const absoluteRef       = useRef(absolute)
+  const normScalesRef     = useRef(normScales)
+  const nextNormScalesRef = useRef(nextNormScales)
   const colorSchemeRef    = useRef(colorScheme)
   const contoursRef       = useRef(contours)
   const globalOpacityRef  = useRef(globalOpacity)
@@ -154,6 +162,8 @@ export default function MapView({
     externalGridsRef.current  = externalGrids
     divergingRef.current      = diverging
     absoluteRef.current       = absolute
+    normScalesRef.current     = normScales
+    nextNormScalesRef.current = nextNormScales
     colorSchemeRef.current    = colorScheme
     contoursRef.current       = contours
     globalOpacityRef.current  = globalOpacity
@@ -235,6 +245,8 @@ export default function MapView({
         getExternalGrids: () => externalGridsRef.current,
         getDiverging:     () => divergingRef.current,
         getAbsolute:      () => absoluteRef.current,
+        getNormScales:    () => normScalesRef.current,
+        getNextNormScales: () => nextNormScalesRef.current,
         getColorScheme:   () => colorSchemeRef.current,
         getContours:      () => contoursRef.current,
         getGlobalOpacity: () => globalOpacityRef.current,
@@ -323,7 +335,7 @@ export default function MapView({
   // Trigger repaint when frame, pressure levels, or depiction options change
   useEffect(() => {
     mapRef.current?.triggerRepaint()
-  }, [frameKey, pressureLevels, diverging, colorScheme, contours, smoothImportedGrids, smoothImportedGridSigma, globalOpacity])
+  }, [frameKey, pressureLevels, diverging, normScales, colorScheme, contours, smoothImportedGrids, smoothImportedGridSigma, globalOpacity])
 
   // Trigger repaint when overlays or their display states change
   useEffect(() => {

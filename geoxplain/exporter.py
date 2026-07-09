@@ -92,6 +92,11 @@ def _encode_level(
     Diverging:     (arr / max_abs) * 0.5 + 0.5  →  [0, 1], centre 0.5 = zero
     Unidirectional: arr / max_abs               →  [0, 1], 0 = min, 1 = max
 
+    *max_abs* is the level's own max |x|, so every level uses the full uint8
+    range; it is exported as ``max_abs`` so the viewer can rescale each level
+    to any coarser normalization scope (per frame, per method, all methods)
+    without losing precision.
+
     ``z`` is the vertical order (higher renders higher; ``sfc`` is the lowest
     sentinel) and ``label`` is the display name — from *layer_labels* if present,
     otherwise the bare number (``"z-2"`` → ``"2"``) or ``"Surface"``.
@@ -112,6 +117,7 @@ def _encode_level(
         'z': level_order(level_id),
         'label': label,
         'shape': list(arr.shape),
+        'max_abs': float(max_abs),
         'data_u8_b64': b64,
     }
 
@@ -134,7 +140,15 @@ def _iter_method_frames(mdata: dict[str, Any]) -> list[tuple[str, dict[str, Any]
     )]
 
 
-VALID_NORMS = ('global', 'per-frame', 'per-level')
+# Normalization scopes for attribution display. Data is always *encoded* at
+# per-level max |x|; these modes only choose the color-range denominator the
+# viewer rescales against:
+#   'global'                — per method, across all its frames (default)
+#   'all-methods'           — across every method and frame (compare methods)
+#   'per-frame'             — per method, per frame
+#   'per-frame-all-methods' — per frame, across methods (matched by timestamp)
+#   'per-level'             — every level uses its own max
+VALID_NORMS = ('global', 'all-methods', 'per-frame', 'per-frame-all-methods', 'per-level')
 
 
 def _encode_overlay_frame(arr: np.ndarray, min_val: float, max_val: float, timestamp: str | None) -> dict:
@@ -224,9 +238,10 @@ def build_json(
     overlays_data: dict[str, dict] | None = None,
     contours: bool | None = None,
     absolute: bool | None = None,
+    normalization: str = 'global',
     viewer_options: dict[str, Any] | None = None,
 ) -> dict:
-    """Build the v4 viewer JSON from pre-processed per-method level arrays.
+    """Build the v5 viewer JSON from pre-processed per-method level arrays.
 
     Parameters
     ----------
@@ -264,11 +279,18 @@ def build_json(
         Optional default for the "Signed values" toggle.  ``True`` starts the
         viewer showing absolute magnitude (folding diverging data); ``None``
         (default) omits the field and leaves signed values on.
+    normalization:
+        Initial normalization scope for the viewer's color range; one of
+        :data:`VALID_NORMS`. Levels are always encoded at their own max |x|
+        with the value exported per level, so the frontend can switch scopes
+        live without re-exporting.
     viewer_options:
         Optional initial frontend options such as ``{"viewMode": "globe"}``.
 
     Returns a JSON-serialisable dict.
     """
+    if normalization not in VALID_NORMS:
+        raise ValueError(f'normalization must be one of {VALID_NORMS}. Got: {normalization!r}')
     result_methods: dict[str, dict] = {}
     global_diverging = False
     hasher = hashlib.md5()
@@ -296,7 +318,6 @@ def build_json(
         if not method_frames:
             continue
 
-        norm = mdata.get('norm', 'global')
         layer_labels = mdata.get('layer_labels', {})
         color_scheme = normalize_attribution_colormap(mdata.get('color_scheme'))
         hasher.update(b'colorScheme')
@@ -331,19 +352,16 @@ def build_json(
                 hasher.update(label.encode('utf-8'))
                 hasher.update(arr.tobytes())
 
-            if norm == 'per-frame':
-                frame_arrays = np.concatenate([arr.ravel() for arr in levels.values()])
-                frame_max_abs = _finite_max_abs(frame_arrays)
-            else:
-                frame_max_abs = method_max_abs
-
+            # Encode every level at its own max |x| (best uint8 precision); the
+            # viewer rescales to the selected normalization scope at render time
+            # using the exported per-level ``max_abs``.
             frame_payload = {
                 'timestamp': timestamp,
                 'diverging': method_diverging,
                 'levels': {
                     lid: _encode_level(
                         arr,
-                        _finite_max_abs(arr) if norm == 'per-level' else frame_max_abs,
+                        _finite_max_abs(arr),
                         method_diverging,
                         lid,
                         layer_labels,
@@ -371,6 +389,8 @@ def build_json(
         hasher.update(b'contours:1' if contours else b'contours:0')
     if absolute is not None:
         hasher.update(b'absolute:1' if absolute else b'absolute:0')
+    hasher.update(b'normalization')
+    hasher.update(normalization.encode('utf-8'))
     if normalized_viewer_options:
         hasher.update(b'viewerOptions')
         hasher.update(
@@ -382,12 +402,13 @@ def build_json(
         )
 
     result: dict[str, Any] = {
-        'version': 4,
+        'version': 5,
         'diverging': global_diverging,
         'appTitle': normalized_title,
         'appSubtitle': normalized_subtitle,
         'targetColor': normalized_target_color,
         'contentHash': hasher.hexdigest()[:12],
+        'normalization': normalization,
         'methods': result_methods,
     }
     if contours is not None:
@@ -418,6 +439,7 @@ def export(
     overlays_data: dict[str, dict] | None = None,
     contours: bool | None = None,
     absolute: bool | None = None,
+    normalization: str = 'global',
     viewer_options: dict[str, Any] | None = None,
 ) -> None:
     """Write viewer_data.json to *out_path*. Creates parent directories as needed."""
@@ -429,6 +451,7 @@ def export(
         overlays_data=overlays_data,
         contours=contours,
         absolute=absolute,
+        normalization=normalization,
         viewer_options=viewer_options,
     )
     os.makedirs(os.path.dirname(os.path.abspath(out_path)), exist_ok=True)

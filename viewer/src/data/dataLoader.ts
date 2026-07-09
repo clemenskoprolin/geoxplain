@@ -1,11 +1,12 @@
 import { normalizeTarget, normalizeTargetColor } from '@/lib/targets'
-import type { AttributionColorScheme, AttributionPresetColormap, DenseGridInput, DenseLevelGrid, DenseMethodData, DenseMethodFrame, OverlayColorStop, OverlayColormap, OverlayData, OverlayFrame, ViewerInitialOptions, ViewerTarget } from '@/types'
-import { ALL_ATTRIBUTION_PRESET_COLORMAPS, DEFAULT_APP_SUBTITLE, DEFAULT_APP_TITLE, OVERLAY_COLORMAPS } from '@/types'
+import type { AttributionColorScheme, AttributionNormalizationMode, AttributionPresetColormap, DenseGridInput, DenseLevelGrid, DenseMethodData, DenseMethodFrame, OverlayColorStop, OverlayColormap, OverlayData, OverlayFrame, ViewerInitialOptions, ViewerTarget } from '@/types'
+import { ALL_ATTRIBUTION_PRESET_COLORMAPS, ATTRIBUTION_NORMALIZATION_MODES, DEFAULT_APP_SUBTITLE, DEFAULT_APP_TITLE, OVERLAY_COLORMAPS } from '@/types'
 
 interface RawLevel {
   z: number
   label: string
   shape: [number, number]
+  max_abs?: number
   data_u8_b64: string
 }
 
@@ -74,6 +75,7 @@ interface RawViewerData {
   appSubtitle?: string
   contours?: boolean
   absolute?: boolean
+  normalization?: string
   viewerOptions?: RawViewerOptions
   targetColor?: string
   contentHash?: string
@@ -111,11 +113,13 @@ function decodeLevels(rawLevels: Record<string, RawLevel>): Record<string, Dense
     if (dataU8.length !== height * width) {
       throw new Error(`Dense grid ${levelId} has shape ${height}x${width} but ${dataU8.length} bytes`)
     }
+    const maxAbs = rawLevel.max_abs
     levels[levelId] = {
       z: rawLevel.z,
       label: rawLevel.label ?? levelId,
       shape: rawLevel.shape,
       dataU8,
+      ...(typeof maxAbs === 'number' && Number.isFinite(maxAbs) && maxAbs > 0 ? { maxAbs } : {}),
     }
   }
   return levels
@@ -347,6 +351,13 @@ function decodeRawViewerData(raw: RawViewerData): DenseGridInput {
 
   if (typeof raw.absolute === 'boolean') {
     result.absolute = raw.absolute
+  }
+
+  if (
+    typeof raw.normalization === 'string'
+    && ATTRIBUTION_NORMALIZATION_MODES.includes(raw.normalization as AttributionNormalizationMode)
+  ) {
+    result.normalization = raw.normalization as AttributionNormalizationMode
   }
 
   const viewerOptions = decodeViewerOptions(raw.viewerOptions)

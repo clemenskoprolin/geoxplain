@@ -4,6 +4,7 @@ from pathlib import Path
 
 import numpy as np
 
+import geoxplain
 from geoxplain import GeoXplainWidget, GeoXplain
 
 
@@ -113,9 +114,13 @@ def test_viewer_open_can_launch_webbrowser(monkeypatch, tmp_path):
         handle.close()
 
 
-def test_widget_browser_export_uses_packaged_browser_bundle(tmp_path):
+def test_widget_browser_export_uses_packaged_browser_bundle(monkeypatch, tmp_path):
+    # config_dir treats absolute paths as Jupyter server-relative (deferred
+    # until page context arrives), so a plain unit test must use a relative
+    # path, which resolves from the kernel working directory.
+    monkeypatch.chdir(tmp_path)
     export_dir = tmp_path / 'browser-export'
-    widget = GeoXplainWidget(config_dir=export_dir)
+    widget = GeoXplainWidget(config_dir='browser-export')
     try:
         widget.add_attribution({'z-2': _array()}, method='Saliency')
 
@@ -131,7 +136,8 @@ def test_widget_browser_export_uses_packaged_browser_bundle(tmp_path):
         with (export_dir / 'viewer_data.json').open(encoding='utf-8') as handle:
             payload = json.load(handle)
         assert payload['methods']
-        assert not (Path('geoxplain') / 'static' / 'viewer_data.json').exists()
+        package_static = Path(geoxplain.__file__).parent / 'static'
+        assert not (package_static / 'viewer_data.json').exists()
     finally:
         widget.close()
 

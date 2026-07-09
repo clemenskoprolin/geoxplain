@@ -242,7 +242,7 @@ Qualified name: `geoxplain._base.GeoXplainBase`. Kind: class.
 
 Shared API for standalone and widget GeoXplain viewers.
 
-#### `GeoXplainBase.add_attribution(self: '_BaseT', source: 'AttributionSource', *, level: 'str | None' = None, pressure_level: 'int | None' = None, method: 'str | _DefaultMethod' = 'saliency', timestamp: 'str | None' = None, target: 'Any' = <object object>, norm: 'str' = 'global', label: 'str | None' = None, layer_labels: 'Mapping[str, str] | None' = None, colormap: 'Any' = None) -> '_BaseT'`
+#### `GeoXplainBase.add_attribution(self: '_BaseT', source: 'AttributionSource', *, level: 'str | None' = None, pressure_level: 'int | None' = None, method: 'str | _DefaultMethod' = 'saliency', timestamp: 'str | None' = None, target: 'Any' = <object object>, norm: 'str | None' = None, label: 'str | None' = None, layer_labels: 'Mapping[str, str] | None' = None, colormap: 'Any' = None) -> '_BaseT'`
 
 Kind: method.
 
@@ -269,7 +269,19 @@ target:
     Optional point or box accepted by the viewer target serializer.
     Result bundles provide their own targets.
 norm:
-    ``"global"``, ``"per-frame"``, or ``"per-level"``.
+    Normalization scope for the attribution color range, applied
+    viewer-wide (the last call wins). One of:
+
+    - ``"global"`` — per method, across all its frames (default)
+    - ``"all-methods"`` — across every method and frame, for
+      comparing attribution magnitudes between methods
+    - ``"per-frame"`` — per method, per frame
+    - ``"per-frame-all-methods"`` — per frame, across methods
+      (frames matched by timestamp)
+    - ``"per-level"`` — every level uses its own max
+
+    ``None`` (default) keeps the current setting. The scope can also
+    be changed live in the viewer under *Layers → Appearance*.
 label:
     Display label for the single level supplied by an array or path.
 layer_labels:

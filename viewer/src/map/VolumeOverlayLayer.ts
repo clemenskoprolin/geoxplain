@@ -17,6 +17,7 @@ import {
   attributionRampStops,
   DEFAULT_ATTRIBUTION_COLOR_SCHEME,
 } from '@/lib/attributionColor'
+import { normScalesSignature } from '@/lib/attributionNormalization'
 import { buildOverlayColormapTexture } from '@/lib/overlayColor'
 import { VolumeCache } from '@/globe/volumeCache'
 import { mapVolumeVertexShader, mapVolumeFragmentShader } from './shaders'
@@ -40,6 +41,10 @@ export interface VolumeOverlayOptions {
   getDiverging: () => boolean
   /** When true, fold diverging data to absolute magnitude (sequential render) */
   getAbsolute: () => boolean
+  /** Per-level normalization rescale factors for the current frame (≤ 1 each) */
+  getNormScales: () => Record<string, number> | null | undefined
+  /** Per-level normalization rescale factors for the prefetched next frame */
+  getNextNormScales: () => Record<string, number> | null | undefined
   /** Attribution color scheme for the selected method */
   getColorScheme: () => AttributionColorScheme
   /** When true, render attribution as contour isolines instead of a filled heatmap */
@@ -199,7 +204,9 @@ export function createVolumeOverlayLayer(opts: VolumeOverlayOptions): CustomLaye
       const volumeBuildMode = denseGridMode ?? (hasPointData ? 'points' : 'empty')
       const denseGridSmoothSigma = hasExternalGridData && opts.getSmoothImportedGrids() ? opts.getSmoothImportedGridSigma().toFixed(2) : 'off'
       const colorSchemeSig = attributionColorSchemeSignature(targetColorScheme)
-      const newKey = `${VolumeCache.cacheKey(frameKey, pressureLevels)}__${volumeBuildMode}__xy:${denseGridSmoothSigma}__${targetDiverging ? 'diverging' : 'sequential'}__abs:${targetAbsolute ? 'on' : 'off'}__color:${colorSchemeSig}`
+      const targetNormScales = opts.getNormScales()
+      const normSig = normScalesSignature(targetNormScales)
+      const newKey = `${VolumeCache.cacheKey(frameKey, pressureLevels)}__${volumeBuildMode}__xy:${denseGridSmoothSigma}__${targetDiverging ? 'diverging' : 'sequential'}__abs:${targetAbsolute ? 'on' : 'off'}__norm:${normSig}__color:${colorSchemeSig}`
 
       if (newKey !== activeKey) {
         activeKey = newKey
@@ -226,6 +233,7 @@ export function createVolumeOverlayLayer(opts: VolumeOverlayOptions): CustomLaye
                 smoothEnabled: opts.getSmoothImportedGrids(),
                 smoothSigma: opts.getSmoothImportedGridSigma(),
                 absolute: targetAbsolute,
+                normScales: opts.getNextNormScales() ?? undefined,
               },
             )
             return
@@ -346,6 +354,7 @@ export function createVolumeOverlayLayer(opts: VolumeOverlayOptions): CustomLaye
                 smoothEnabled: opts.getSmoothImportedGrids(),
                 smoothSigma: opts.getSmoothImportedGridSigma(),
                 absolute: targetAbsolute,
+                normScales: targetNormScales ?? undefined,
               },
             )
           } else {

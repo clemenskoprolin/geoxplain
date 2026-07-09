@@ -73,6 +73,7 @@ class GeoXplainBase:
     _colormap: dict[str, Any]
     _contours: bool | None
     _absolute: bool | None
+    _normalization: str
     _viewer_options: dict[str, Any]
 
     def _init_base_state(
@@ -94,6 +95,7 @@ class GeoXplainBase:
         self._colormap = normalize_attribution_colormap(colormap)
         self._contours = contours
         self._absolute = absolute
+        self._normalization = 'global'
         self._viewer_options = dict(viewer_options or {})
 
     def add_attribution(
@@ -105,7 +107,7 @@ class GeoXplainBase:
         method: str | _DefaultMethod = _DEFAULT_METHOD,
         timestamp: str | None = None,
         target: Any = _UNSET,
-        norm: str = 'global',
+        norm: str | None = None,
         label: str | None = None,
         layer_labels: Mapping[str, str] | None = None,
         colormap: Any = None,
@@ -133,7 +135,19 @@ class GeoXplainBase:
             Optional point or box accepted by the viewer target serializer.
             Result bundles provide their own targets.
         norm:
-            ``"global"``, ``"per-frame"``, or ``"per-level"``.
+            Normalization scope for the attribution color range, applied
+            viewer-wide (the last call wins). One of:
+
+            - ``"global"`` — per method, across all its frames (default)
+            - ``"all-methods"`` — across every method and frame, for
+              comparing attribution magnitudes between methods
+            - ``"per-frame"`` — per method, per frame
+            - ``"per-frame-all-methods"`` — per frame, across methods
+              (frames matched by timestamp)
+            - ``"per-level"`` — every level uses its own max
+
+            ``None`` (default) keeps the current setting. The scope can also
+            be changed live in the viewer under *Layers → Appearance*.
         label:
             Display label for the single level supplied by an array or path.
         layer_labels:
@@ -172,6 +186,11 @@ class GeoXplainBase:
             else _normalize_method(method)
         )
 
+        if norm is not None:
+            if norm not in VALID_NORMS:
+                raise ValueError(f'norm must be one of {VALID_NORMS}. Got: {norm!r}')
+            self._normalization = norm
+
         if isinstance(source, XiaResultProtocol):
             self._reject_xia_result_overrides(
                 level=level,
@@ -179,7 +198,6 @@ class GeoXplainBase:
                 method_was_specified=method_was_specified,
                 timestamp=timestamp,
                 target=target,
-                norm=norm,
                 label=label,
                 layer_labels=layer_labels,
             )
@@ -214,7 +232,6 @@ class GeoXplainBase:
                 method=method_name,
                 timestamp=timestamp,
                 target=target,
-                norm=norm,
                 layer_labels=layer_labels,
                 colormap=colormap,
             )
@@ -231,7 +248,6 @@ class GeoXplainBase:
                 method=method_name,
                 timestamp=timestamp,
                 target=target,
-                norm=norm,
                 layer_labels={level_id: effective_label} if effective_label else None,
                 colormap=colormap,
             )
@@ -488,6 +504,7 @@ class GeoXplainBase:
             overlays_data=self._overlays,
             contours=self._contours,
             absolute=self._absolute,
+            normalization=self._normalization,
             viewer_options=self._viewer_options,
         )
 
@@ -498,13 +515,10 @@ class GeoXplainBase:
         method: str,
         timestamp: Optional[str] = None,
         target: Any = _UNSET,
-        norm: str = 'global',
         layer_labels: Mapping[str, str] | None = None,
         colormap: Any = None,
         _progress_reporter: _DelayedLayerProgressReporter | None = None,
     ) -> None:
-        if norm not in VALID_NORMS:
-            raise ValueError(f'norm must be one of {VALID_NORMS}. Got: {norm!r}')
         for level_id in grids:
             if not isinstance(level_id, str) or not is_valid_level_id(level_id):
                 raise ValueError(
@@ -524,10 +538,9 @@ class GeoXplainBase:
         slug = slugify(method)
         method_store = self._methods.setdefault(
             slug,
-            {'label': method, 'frames': {}, 'norm': norm, 'layer_labels': {}},
+            {'label': method, 'frames': {}, 'layer_labels': {}},
         )
         method_store['label'] = method
-        method_store['norm'] = norm
         method_store['color_scheme'] = normalize_attribution_colormap(
             self._colormap if colormap is None else colormap
         )
@@ -601,7 +614,6 @@ class GeoXplainBase:
         method_was_specified: bool,
         timestamp: str | None,
         target: Any,
-        norm: str,
         label: str | None,
         layer_labels: Mapping[str, str] | None,
     ) -> None:
@@ -618,8 +630,6 @@ class GeoXplainBase:
             raise TypeError('timestamp cannot be specified when source is a XiaResult.')
         if target is not _UNSET:
             raise TypeError('target cannot be specified when source is a XiaResult.')
-        if norm != 'global':
-            raise TypeError('norm cannot be specified when source is a XiaResult.')
         if label is not None:
             raise TypeError('label cannot be specified when source is a XiaResult.')
         if layer_labels is not None:

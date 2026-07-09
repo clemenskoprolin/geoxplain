@@ -189,6 +189,7 @@ class GeoXplain(GeoXplainBase):
             overlays_data=self._overlays,
             contours=self._contours,
             absolute=self._absolute,
+            normalization=self._normalization,
             viewer_options=self._viewer_options,
         )
         return path

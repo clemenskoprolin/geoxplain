@@ -20,6 +20,7 @@ import {
   DEFAULT_APP_TITLE,
   buildLevelsFromData,
   OVERLAY_COLORMAPS,
+  type AttributionNormalizationMode,
   type AttributionPoint,
   type AttributionPresetColormap,
   type DenseGridInput,
@@ -32,6 +33,10 @@ import {
   type ViewerMapCameraState,
   type ViewerMode,
 } from '@/types'
+import {
+  computeNormalizationScales,
+  hasNormalizationInfo,
+} from '@/lib/attributionNormalization'
 import { VolumeCache } from '@/globe/volumeCache'
 import { ViewerHeader } from '@/components/attributionViewer/ViewerHeader'
 import { NoDataHint } from '@/components/attributionViewer/NoDataHint'
@@ -129,6 +134,9 @@ export function AttributionViewer({
   const [mapType, setMapType] = useState<GlobeMapType>(initialLaunchState?.mapType ?? initialMapType)
   const [contours, setContours] = useState(initialLaunchState?.contours ?? initialContours)
   const [absolute, setAbsolute] = useState(initialLaunchState?.absolute ?? initialAbsolute)
+  const [normalization, setNormalization] = useState<AttributionNormalizationMode>(
+    initialLaunchState?.normalization ?? 'global',
+  )
   const [smoothImportedGrids, setSmoothImportedGrids] = useState(initialLaunchState?.smoothImportedGrids ?? initialSmoothImportedGrids)
   const [smoothImportedGridSigma, setSmoothImportedGridSigma] = useState(initialLaunchState?.smoothImportedGridSigma ?? DEFAULT_IMPORTED_GRID_SMOOTH_SIGMA)
   const [contourAttributionColorSchemes, setContourAttributionColorSchemes] = useState<Record<string, AttributionPresetColormap>>({})
@@ -236,6 +244,19 @@ export function AttributionViewer({
     if (externalData?.absolute === undefined) return
     dataAbsoluteAppliedRef.current = true
     setAbsolute(externalData.absolute)
+  }, [externalData, initialLaunchState])
+
+  // Adopt the Python-side normalization scope whenever the payload value
+  // changes (a later add_attribution(norm=...) call in widget mode updates the
+  // viewer), except on first arrival when the launch URL already pinned one.
+  const dataNormalizationRef = useRef<AttributionNormalizationMode | null>(null)
+  useEffect(() => {
+    const dataNormalization = externalData?.normalization
+    if (!dataNormalization || dataNormalization === dataNormalizationRef.current) return
+    const isFirstAdoption = dataNormalizationRef.current === null
+    dataNormalizationRef.current = dataNormalization
+    if (isFirstAdoption && initialLaunchState?.normalization !== undefined) return
+    setNormalization(dataNormalization)
   }, [externalData, initialLaunchState])
 
   const dataViewerOptionsAppliedRef = useRef(false)
@@ -397,6 +418,19 @@ export function AttributionViewer({
     [currentExternalLevels],
   )
 
+  // Live normalization-scope rescaling needs per-level maxAbs metadata
+  // (payload v5+); older payloads render at their baked normalization.
+  const normalizationAvailable = useMemo(
+    () => hasNormalizationInfo(externalData),
+    [externalData],
+  )
+  const currentNormScales = useMemo(
+    () => normalizationAvailable && externalData
+      ? computeNormalizationScales(externalData, selectedMethod, currentTimestampIndex, normalization)
+      : null,
+    [normalizationAvailable, externalData, selectedMethod, currentTimestampIndex, normalization],
+  )
+
   useEffect(() => {
     if (!currentExternalMethod) return
     setCurrentTimestampIndex((prev) => Math.min(prev, Math.max(0, currentExternalMethod.frames.length - 1)))
@@ -430,6 +464,12 @@ export function AttributionViewer({
   const nextExternalGridSignature = useMemo(
     () => externalGridSignature(nextExternalLevels),
     [nextExternalLevels],
+  )
+  const nextNormScales = useMemo(
+    () => normalizationAvailable && externalData
+      ? computeNormalizationScales(externalData, selectedMethod, nextTimestampIndex, normalization)
+      : null,
+    [normalizationAvailable, externalData, selectedMethod, nextTimestampIndex, normalization],
   )
   const nextPoints = EMPTY_ATTRIBUTION_POINTS
   const nextFrameKey = useMemo(
@@ -607,6 +647,7 @@ export function AttributionViewer({
       theme: getCurrentTheme(scopedRoot),
       contours,
       absolute,
+      normalization,
       attributionColorSchemes,
       overlayLayerStates,
       pressureLevels: pressureLevels.map((level) => ({
@@ -625,6 +666,7 @@ export function AttributionViewer({
       attributionColorSchemes,
       contours,
       absolute,
+      normalization,
       currentTimestampIndex,
       mapType,
       overlayLayerStates,
@@ -733,6 +775,7 @@ export function AttributionViewer({
             externalGrids={currentExternalLevels}
             diverging={diverging}
             absolute={absoluteActive}
+            normScales={currentNormScales?.scales ?? null}
             colorScheme={colorScheme}
             contours={contours}
             target={currentTarget}
@@ -740,6 +783,7 @@ export function AttributionViewer({
             nextFrameKey={nextFrameKey}
             nextPoints={nextPoints}
             nextExternalGrids={nextExternalLevels}
+            nextNormScales={nextNormScales?.scales ?? null}
             onViewChange={handleGlobeViewChange}
             requestedView={globeRequestedView}
             isActive={globeVisible || isTransitioning}
@@ -778,6 +822,7 @@ export function AttributionViewer({
               externalGrids={currentExternalLevels}
               diverging={diverging}
               absolute={absoluteActive}
+              normScales={currentNormScales?.scales ?? null}
               colorScheme={colorScheme}
               contours={contours}
               target={currentTarget}
@@ -785,6 +830,7 @@ export function AttributionViewer({
               nextFrameKey={nextFrameKey}
               nextPoints={nextPoints}
               nextExternalGrids={nextExternalLevels}
+              nextNormScales={nextNormScales?.scales ?? null}
               initialCenter={initialMapCenter}
               initialZoom={launchMapCamera.zoom}
               onViewChange={handleMapViewChange}
@@ -832,6 +878,9 @@ export function AttributionViewer({
               signed={!absolute}
               onSignedChange={(v) => setAbsolute(!v)}
               canToggleSigned={inferredDiverging}
+              normalization={normalization}
+              onNormalizationChange={setNormalization}
+              canSelectNormalization={normalizationAvailable}
             />
             {externalData?.overlays && Object.keys(externalData.overlays).length > 0 && (
               <OverlayPanel
@@ -846,6 +895,7 @@ export function AttributionViewer({
                 diverging={diverging}
                 contours={contours}
                 methodLabel={currentExternalMethod?.label}
+                attributionMaxAbs={currentNormScales?.targetMaxAbs ?? null}
                 overlays={externalData?.overlays}
                 overlayStates={overlayLayerStates}
               />

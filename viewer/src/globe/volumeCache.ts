@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import type { AttributionPoint, DenseLevelGrid, PressureLevel } from '@/types'
+import { normScalesSignature } from '@/lib/attributionNormalization'
 import VolumeWorker from './volumeWorker?worker&inline'
 import {
   VOL_W,
@@ -24,6 +25,8 @@ interface DenseBuildOptions {
   smoothEnabled?: boolean
   smoothSigma?: number
   absolute?: boolean
+  /** Per-level normalization rescale factors (≤ 1); see BuildVolumeFromGridsParams. */
+  normScales?: Record<string, number>
 }
 
 interface NormalizedDenseBuildOptions {
@@ -31,6 +34,7 @@ interface NormalizedDenseBuildOptions {
   smoothEnabled: boolean
   smoothSigma: number
   absolute: boolean
+  normScales: Record<string, number>
 }
 
 interface WorkerResponse {
@@ -186,6 +190,7 @@ export class VolumeCache {
       smoothEnabled: options.smoothEnabled ?? false,
       smoothSigma: options.smoothSigma ?? 1.5,
       absolute: options.absolute ?? false,
+      normScales: options.normScales ?? {},
     }
   }
 
@@ -239,6 +244,7 @@ export class VolumeCache {
       smoothEnabled: options.smoothEnabled,
       smoothSigma: options.smoothSigma,
       absolute: options.absolute,
+      normScales: options.normScales,
     })
     const filter = buildResult.useLinearFiltering ? THREE.LinearFilter : THREE.NearestFilter
     const tex = dataToTexture(buildResult.data, buildResult.width, buildResult.height, buildResult.depth, filter, filter)
@@ -312,7 +318,8 @@ export class VolumeCache {
     const smoothKey = normalizedOptions.smoothEnabled ? normalizedOptions.smoothSigma.toFixed(2) : 'off'
     const buildInfo = resolveDenseGridBuildInfo(grids, normalizedOptions.smoothEnabled)
     const filterKey = buildInfo.useLinearFiltering ? 'linear' : 'nearest'
-    const key = `${VolumeCache.cacheKey(frameKey, pressureLevels)}__dense:flat:${normalizedOptions.diverging ? 'diverging' : 'sequential'}:abs:${normalizedOptions.absolute ? 'on' : 'off'}:xy:${smoothKey}:work:${buildInfo.width}x${buildInfo.height}:filter:${filterKey}`
+    const normKey = normScalesSignature(normalizedOptions.normScales)
+    const key = `${VolumeCache.cacheKey(frameKey, pressureLevels)}__dense:flat:${normalizedOptions.diverging ? 'diverging' : 'sequential'}:abs:${normalizedOptions.absolute ? 'on' : 'off'}:xy:${smoothKey}:norm:${normKey}:work:${buildInfo.width}x${buildInfo.height}:filter:${filterKey}`
     const cached = this.getCached(key)
     if (cached) return cached
 
@@ -346,6 +353,7 @@ export class VolumeCache {
           smoothEnabled: normalizedOptions.smoothEnabled,
           smoothSigma: normalizedOptions.smoothSigma,
           absolute: normalizedOptions.absolute,
+          normScales: normalizedOptions.normScales,
         })
       } catch {
         this.pending.delete(key)

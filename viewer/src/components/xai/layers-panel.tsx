@@ -4,13 +4,27 @@ import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   attributionPaletteGradient,
   attributionPaletteLabel,
   customColorSchemeGradientCss,
   orderedAttributionUiPalettes,
   orderedContourPalettes,
 } from '@/lib/attributionColor'
-import type { AttributionColorScheme, AttributionPresetColormap, PressureLevel } from '@/types'
+import {
+  ATTRIBUTION_NORMALIZATION_LABELS,
+  ATTRIBUTION_NORMALIZATION_MODES,
+  type AttributionColorScheme,
+  type AttributionNormalizationMode,
+  type AttributionPresetColormap,
+  type PressureLevel,
+} from '@/types'
 
 const IMPORTED_GRID_SIGMA_MIN = 0.1
 const IMPORTED_GRID_SIGMA_MAX = 3
@@ -40,6 +54,10 @@ interface LayersPanelProps {
   signed: boolean
   onSignedChange: (enabled: boolean) => void
   canToggleSigned: boolean
+  normalization: AttributionNormalizationMode
+  onNormalizationChange: (mode: AttributionNormalizationMode) => void
+  /** False for pre-v5 payloads without per-level maxAbs; hides the selector. */
+  canSelectNormalization: boolean
 }
 
 export function LayersPanel({
@@ -65,6 +83,9 @@ export function LayersPanel({
   signed,
   onSignedChange,
   canToggleSigned,
+  normalization,
+  onNormalizationChange,
+  canSelectNormalization,
 }: LayersPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [isAppearanceExpanded, setIsAppearanceExpanded] = useState(false)
@@ -271,8 +292,8 @@ export function LayersPanel({
 
             <div
               className={cn(
-                'overflow-hidden transition-all duration-300 ease-in-out',
-                isAppearanceExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                'transition-all duration-300 ease-in-out',
+                isAppearanceExpanded ? 'max-h-144 opacity-100' : 'max-h-0 overflow-hidden opacity-0'
               )}
             >
               <div className="pt-2 pl-4 space-y-3">
@@ -299,6 +320,38 @@ export function LayersPanel({
                       onCheckedChange={onSignedChange}
                       aria-label="Toggle signed values (off shows absolute magnitude)"
                     />
+                  </div>
+                )}
+
+                {canSelectNormalization && (
+                  <div>
+                    <div className="mb-1.5 flex items-center gap-2">
+                      <NormalizationIcon className="h-3.5 w-3.5 text-primary" />
+                      <span className="text-xs font-medium">Normalization</span>
+                    </div>
+                    <Select
+                      value={normalization}
+                      onValueChange={(value) => onNormalizationChange(value as AttributionNormalizationMode)}
+                    >
+                      <SelectTrigger
+                        size="sm"
+                        className="w-full text-xs"
+                        aria-label="Attribution normalization scope"
+                      >
+                        <SelectValue>
+                          {(value: AttributionNormalizationMode) =>
+                            ATTRIBUTION_NORMALIZATION_LABELS[value]
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {ATTRIBUTION_NORMALIZATION_MODES.map((mode) => (
+                          <SelectItem key={mode} value={mode} className="text-xs">
+                            {ATTRIBUTION_NORMALIZATION_LABELS[mode]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                 )}
 
@@ -533,6 +586,14 @@ function AppearanceIcon({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
       <path fill="currentColor" d="M12 3.5a8.5 8.5 0 0 0 0 17h1.15a1.85 1.85 0 0 0 1.25-3.22 1.3 1.3 0 0 1 .88-2.25h1.09A4.13 4.13 0 0 0 20.5 10.9C20.5 6.84 16.7 3.5 12 3.5Zm-4.45 8.35a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm2.4-3.9a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm4.1 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Zm2.4 3.9a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5Z" />
+    </svg>
+  )
+}
+
+function NormalizationIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M7 12h10M10 18h4" />
     </svg>
   )
 }

@@ -1,8 +1,10 @@
 import {
   ALL_ATTRIBUTION_PRESET_COLORMAPS,
+  ATTRIBUTION_NORMALIZATION_MODES,
   OVERLAY_COLORMAPS,
 } from '@/types'
 import type {
+  AttributionNormalizationMode,
   AttributionPresetColormap,
   OverlayColormap,
   OverlayLayerState,
@@ -89,6 +91,7 @@ function parseLaunchState(value: unknown): ViewerLaunchState | null {
     theme,
     contours,
     absolute,
+    normalization,
     attributionColorSchemes,
     overlayLayerStates,
     pressureLevels,
@@ -118,6 +121,11 @@ function parseLaunchState(value: unknown): ViewerLaunchState | null {
     theme: theme === 'dark' || theme === 'light' ? theme : undefined,
     contours: typeof contours === 'boolean' ? contours : undefined,
     absolute: typeof absolute === 'boolean' ? absolute : undefined,
+    normalization:
+      typeof normalization === 'string'
+      && ATTRIBUTION_NORMALIZATION_MODES.includes(normalization as AttributionNormalizationMode)
+        ? normalization as AttributionNormalizationMode
+        : undefined,
     attributionColorSchemes: parseAttributionColorSchemes(attributionColorSchemes),
     overlayLayerStates: parseOverlayLayerStates(overlayLayerStates),
     pressureLevels: parsedPressureLevels,

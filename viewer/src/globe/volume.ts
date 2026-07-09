@@ -80,6 +80,13 @@ export interface BuildVolumeFromGridsParams {
    * "Signed values" UI toggle when turned off.
    */
   absolute?: boolean
+  /**
+   * Per-level normalization rescale factors (≤ 1), keyed by level id. Grids
+   * are encoded at their own max |x|; multiplying decoded samples by
+   * `levelMaxAbs / targetMaxAbs` renders them at a coarser normalization
+   * scope (per frame / per method / all methods). Missing ids default to 1.
+   */
+  normScales?: Record<string, number>
 }
 
 export interface DenseGridShape {
@@ -211,10 +218,25 @@ function getGaussianKernel1D(sigma: number): GaussianKernel1D {
   return kernel
 }
 
-function decodeGridToFloat(grid: DenseGridVolumeInput): Float32Array {
+function decodeGridToFloat(
+  grid: DenseGridVolumeInput,
+  scale = 1,
+  diverging = false,
+): Float32Array {
   const decoded = new Float32Array(grid.dataU8.length)
-  for (let i = 0; i < grid.dataU8.length; i++) {
-    decoded[i] = grid.dataU8[i] / 255
+  if (scale === 1) {
+    for (let i = 0; i < grid.dataU8.length; i++) {
+      decoded[i] = grid.dataU8[i] / 255
+    }
+  } else if (diverging) {
+    // 0.5-centred encoding: rescale the signed offset around the zero point.
+    for (let i = 0; i < grid.dataU8.length; i++) {
+      decoded[i] = (grid.dataU8[i] / 255 - 0.5) * scale + 0.5
+    }
+  } else {
+    for (let i = 0; i < grid.dataU8.length; i++) {
+      decoded[i] = (grid.dataU8[i] / 255) * scale
+    }
   }
   return decoded
 }
@@ -260,9 +282,10 @@ function smoothDenseGridXY(
   grid: DenseGridVolumeInput,
   sigma: number,
   diverging: boolean,
+  scale = 1,
 ): Float32Array {
   const [H, W] = grid.shape
-  const source = decodeGridToFloat(grid)
+  const source = decodeGridToFloat(grid, scale, diverging)
   const working = new Float32Array(source.length)
   if (diverging) {
     for (let i = 0; i < source.length; i++) {
@@ -324,6 +347,7 @@ function buildDenseGridSamples(
   diverging: boolean,
   absolute: boolean,
   targetShape: DenseGridShape,
+  normScales: Record<string, number>,
 ): Map<string, Float32Array> {
   const samples = new Map<string, Float32Array>()
   // In absolute mode the source field is always diverging-encoded (0.5 = zero);
@@ -334,8 +358,11 @@ function buildDenseGridSamples(
     if (!level.visible || level.opacity <= 0) continue
     const grid = grids[level.id]
     if (!grid) continue
+    const scale = normScales[level.id] ?? 1
     const [sourceH, sourceW] = grid.shape
-    let source = smoothEnabled ? smoothDenseGridXY(grid, smoothSigma, sourceDiverging) : decodeGridToFloat(grid)
+    let source = smoothEnabled
+      ? smoothDenseGridXY(grid, smoothSigma, sourceDiverging, scale)
+      : decodeGridToFloat(grid, scale, sourceDiverging)
     if (absolute) {
       const folded = new Float32Array(source.length)
       for (let i = 0; i < source.length; i++) {
@@ -415,13 +442,14 @@ export function buildVolumeDataFromGrids(params: BuildVolumeFromGridsParams): De
     smoothEnabled = false,
     smoothSigma = 1.5,
     absolute = false,
+    normScales = {},
   } = params
   // Folded magnitudes are a plain sequential field, so the fuse/encode step runs
   // in sequential mode even though the source data was diverging-encoded.
   const buildDiverging = diverging && !absolute
   const buildInfo = resolveDenseGridBuildInfo(grids, smoothEnabled)
   const { width: W, height: H, depth: Z } = buildInfo
-  const gridSamples = buildDenseGridSamples(grids, levels, smoothEnabled, smoothSigma, buildDiverging, absolute, buildInfo)
+  const gridSamples = buildDenseGridSamples(grids, levels, smoothEnabled, smoothSigma, buildDiverging, absolute, buildInfo, normScales)
   const data = buildFlatVolumeDataFromGrids(gridSamples, levels, buildDiverging, W, H, Z)
 
   return {

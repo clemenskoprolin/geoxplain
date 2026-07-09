@@ -29,7 +29,8 @@
 ## High-level selection rules
 
 - Use `GeoXplainWidget` in Jupyter and `GeoXplain` for scripts or standalone browser viewing.
-- Pass `XiaResult` directly to `add_attribution()`; do not repeat its method, target, timestamp, level, normalization, or labels.
+- Pass `XiaResult` directly to `add_attribution()`; do not repeat its method, target, timestamp, level, or labels. `norm` and `colormap` may be set.
+- `add_attribution(norm=...)` sets the viewer-wide normalization scope: `"global"` (per method), `"all-methods"`, `"per-frame"`, `"per-frame-all-methods"`, or `"per-level"`; it is also switchable live in the viewer under Layers → Appearance.
 - Use exactly one of `level` and `pressure_level` for a single raw attribution grid.
 - GeoXplain accepts any method label; its viewer is not limited to the methods implemented by the Aurora backend.
 - For the Aurora backend, omit `remote` only when the caller has a visible GPU and the local profile.

@@ -188,6 +188,29 @@ class GeoXplainXiaResultTests(unittest.TestCase):
             with self.assertRaisesRegex(TypeError, 'target cannot be specified'):
                 viewer.add_attribution(result, target=None)
 
+    def test_xia_result_accepts_norm_and_payload_supports_rescaling(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            out_path = Path(tmp) / 'viewer_data.json'
+            viewer = GeoXplain(out_path=str(out_path))
+            result = _result(
+                'saliency',
+                '2020-01-01T22:00:00Z',
+                {'zwd': {'z-2': _array(2.0), 'sfc': _array(0.5)}},
+            )
+
+            viewer.add_attribution(result, norm='all-methods')
+
+            data = _read_json(out_path)
+            self.assertEqual(data['version'], 5)
+            self.assertEqual(data['normalization'], 'all-methods')
+            (method,) = data['methods'].values()
+            (frame,) = method['frames']
+            self.assertEqual(frame['levels']['z-2']['max_abs'], 2.0)
+            self.assertEqual(frame['levels']['sfc']['max_abs'], 0.5)
+
+            with self.assertRaisesRegex(ValueError, 'norm must be one of'):
+                viewer.add_attribution(result, norm='invalid')
+
     def test_raw_attribution_dispatch_is_strict(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             out_path = Path(tmp) / 'viewer_data.json'

@@ -9,6 +9,7 @@ import {
   attributionColorSchemeSignature,
   DEFAULT_ATTRIBUTION_COLOR_SCHEME,
 } from '@/lib/attributionColor'
+import { normScalesSignature } from '@/lib/attributionNormalization'
 import { VolumeCache } from '@/globe/volumeCache'
 import { vertexShader, fragmentShader } from '@/globe/shaders'
 import { GLOBE_RADIUS } from '@/globe/constants'
@@ -42,6 +43,8 @@ interface GlobeViewProps {
   externalGrids?: Record<string, DenseLevelGrid> | null
   diverging?: boolean
   absolute?: boolean
+  /** Per-level normalization rescale factors for the current frame (≤ 1 each). */
+  normScales?: Record<string, number> | null
   colorScheme?: AttributionColorScheme
   contours?: boolean
   target?: ViewerTarget | null
@@ -49,6 +52,8 @@ interface GlobeViewProps {
   nextFrameKey?: string
   nextPoints?: AttributionPoint[]
   nextExternalGrids?: Record<string, DenseLevelGrid> | null
+  /** Per-level normalization rescale factors for the prefetched next frame. */
+  nextNormScales?: Record<string, number> | null
   onViewChange?: (lat: number, lng: number, altitude: number) => void
   /** Repeated camera moves are keyed by id so identical positions still run. */
   requestedView?: { lat: number; lng: number; altitude: number; durationMs: number; id: number }
@@ -103,6 +108,7 @@ function GlobeViewInner({
   externalGrids,
   diverging = false,
   absolute = false,
+  normScales = null,
   colorScheme = DEFAULT_ATTRIBUTION_COLOR_SCHEME,
   contours = false,
   target = null,
@@ -110,6 +116,7 @@ function GlobeViewInner({
   nextFrameKey,
   nextPoints,
   nextExternalGrids,
+  nextNormScales = null,
   onViewChange,
   requestedView,
   isActive = true,
@@ -434,7 +441,8 @@ function GlobeViewInner({
     const volumeBuildMode = denseGridMode ?? (hasPointData ? 'points' : 'empty')
     const denseGridSmoothSigma = hasExternalGridData && smoothImportedGrids ? smoothImportedGridSigma.toFixed(2) : 'off'
     const colorSchemeSig = attributionColorSchemeSignature(colorScheme)
-    const fullKey = `${frameKey}__${plSig}__${volumeBuildMode}__xy:${denseGridSmoothSigma}__${diverging ? 'diverging' : 'sequential'}__abs:${absolute ? 'on' : 'off'}__color:${colorSchemeSig}`
+    const normSig = normScalesSignature(normScales)
+    const fullKey = `${frameKey}__${plSig}__${volumeBuildMode}__xy:${denseGridSmoothSigma}__${diverging ? 'diverging' : 'sequential'}__abs:${absolute ? 'on' : 'off'}__norm:${normSig}__color:${colorSchemeSig}`
     if (fullKey === activeFrameKeyRef.current) return
     activeFrameKeyRef.current = fullKey
 
@@ -555,6 +563,7 @@ function GlobeViewInner({
             smoothEnabled: smoothImportedGrids,
             smoothSigma: smoothImportedGridSigma,
             absolute,
+            normScales: nextNormScales ?? undefined,
           },
         )
         return
@@ -628,6 +637,7 @@ function GlobeViewInner({
             smoothEnabled: smoothImportedGrids,
             smoothSigma: smoothImportedGridSigma,
             absolute,
+            normScales: normScales ?? undefined,
           },
         )
       : cache.getOrBuild(frameKey, points, pressureLevels)
@@ -643,7 +653,7 @@ function GlobeViewInner({
       startBlend(result)
       prefetchNext()
     }
-  }, [globeReady, frameKey, pressureLevels, points, externalGrids, blendMs, nextFrameKey, nextPoints, nextExternalGrids, volumeCache, diverging, absolute, colorScheme, smoothImportedGrids, smoothImportedGridSigma, markCaptureReady])
+  }, [globeReady, frameKey, pressureLevels, points, externalGrids, blendMs, nextFrameKey, nextPoints, nextExternalGrids, volumeCache, diverging, absolute, normScales, nextNormScales, colorScheme, smoothImportedGrids, smoothImportedGridSigma, markCaptureReady])
 
   // Weather-field overlay meshes (owns its own registry + disposal).
   useGlobeOverlays(globeRef, globeReady, { overlays, overlayStates, overlayFrameIndex, blendMs })

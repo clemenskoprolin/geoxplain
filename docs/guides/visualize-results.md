@@ -18,7 +18,7 @@
 | 2-D NumPy array | Exactly one of `level` or `pressure_level` | `layer_labels` is not accepted; use `label`. |
 | `.npy` path | Exactly one of `level` or `pressure_level` | Same rules as an array. |
 | `{level_id: array_or_path}` mapping | Level IDs are the mapping keys | Do not also pass `level`, `pressure_level`, or `label`. |
-| `XiaResult`-compatible object | Metadata comes from the bundle | Do not override level, method, timestamp, target, normalization, or labels. `colormap` may be overridden. |
+| `XiaResult`-compatible object | Metadata comes from the bundle | Do not override level, method, timestamp, target, or labels. `colormap` and `norm` may be overridden. |
 
 ### Single grid
 
@@ -57,7 +57,25 @@ widget.add_attribution(
 )
 ```
 
-Valid level keys are `"sfc"` and `"z-<integer>"`. Normalization can be `"global"`, `"per-frame"`, or `"per-level"`.
+Valid level keys are `"sfc"` and `"z-<integer>"`.
+
+## Choose a normalization scope
+
+The `norm` argument of `add_attribution()` selects how the attribution color range is normalized. It is a viewer-wide display setting (the last call wins) and works for every source shape, including `.xia` result bundles:
+
+```python
+widget.add_attribution(result, norm="all-methods")
+```
+
+| `norm` | Color range spans |
+| --- | --- |
+| `"global"` (default) | One method, across all its frames |
+| `"all-methods"` | Every method and frame — best for comparing attribution magnitudes between methods |
+| `"per-frame"` | One method, one frame at a time |
+| `"per-frame-all-methods"` | One frame across all methods (frames are matched by timestamp) |
+| `"per-level"` | Each vertical level uses its own max |
+
+Each level is exported at its own maximum absolute value together with that value, so the viewer rescales on the fly: the scope can also be changed interactively in the viewer under **Layers → Appearance → Normalization**, without re-exporting. The legend shows the raw-value magnitude the color range corresponds to under the selected scope. Passing `norm=None` (the default) keeps the current setting.
 
 ## Specify targets
 

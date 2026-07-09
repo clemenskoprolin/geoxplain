@@ -22,7 +22,25 @@ backend such as the separate Aurora adapter.
 <details>
 <summary><strong>Cite us</strong></summary>
 
-Will be published shortly.
+The GeoXplain preprint is available on arXiv and has been submitted to
+vis4climate at IEEE VIS 2026. Until the conference version is available, use the arXiv preprint:
+
+Koprolin, C. W., Trentini, L., Soja, B., El-Assady, M., & Humer, C. (2026).
+*GeoXplain: On-the-Fly Visual Explanations for Weather Foundation Models*.
+arXiv:2607.05655 [cs.HC]. https://doi.org/10.48550/arXiv.2607.05655
+
+```bibtex
+@misc{koprolin2026geoxplainontheflyvisualexplanations,
+  title={GeoXplain: On-the-Fly Visual Explanations for Weather Foundation Models},
+  author={Clemens Walter Koprolin and Leonardo Trentini and Benedikt Soja and Mennatallah El-Assady and Christina Humer},
+  year={2026},
+  eprint={2607.05655},
+  archivePrefix={arXiv},
+  primaryClass={cs.HC},
+  doi={10.48550/arXiv.2607.05655},
+  url={https://arxiv.org/abs/2607.05655},
+}
+```
 
 </details>
 
@@ -187,4 +205,4 @@ GeoXplain is distributed under the MIT License. See [LICENSE](LICENSE) and
 [llms-full-link]: https://clemenskoprolin.github.io/geoxplain/llms-full.txt
 [api-inventory-link]: https://clemenskoprolin.github.io/geoxplain/api-reference.json
 [demo-link]: https://ckoprolin.ivia.ch/
-[paper-link]: https://example.com/geoxplain-paper
+[paper-link]: https://arxiv.org/abs/2607.05655

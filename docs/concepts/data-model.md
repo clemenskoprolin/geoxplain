@@ -27,6 +27,8 @@ An attribution bundle contains:
 
 Each frame stores its target, timestamp, nested attribution mapping, diverging flag, and per-frame metadata. The viewer preprocesses arbitrary two-dimensional imported grids. A backend may therefore use its native regular-grid resolution; the Aurora backend, for example, produces `(721, 1440)` `float32` fields.
 
+Bundles store raw attribution magnitudes; normalizing them for display is a viewer-side choice. On import, each level is quantized against its own maximum absolute value and that value is kept alongside the grid, so the viewer can rescale the color range to any scope — per method, per frame, across all methods — on the fly. See [Choose a normalization scope](../guides/visualize-results.md#choose-a-normalization-scope).
+
 Compatible bundles can be saved as `.xia.npz` archives. The viewer loads them without importing the backend that produced them:
 
 ```python

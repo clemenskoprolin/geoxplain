@@ -54,6 +54,39 @@ export interface DenseLevelGrid {
   label: string             // display name for this layer
   shape: [number, number]   // [H, W] — native imported grid after longitude roll
   dataU8: Uint8Array        // H×W flat, row-major (lat × lon)
+  /**
+   * Max |raw value| this level was encoded against (payload v5+). Present on
+   * every level of a payload that supports live normalization-scope switching;
+   * absent on older payloads, which render at their baked normalization.
+   */
+  maxAbs?: number
+}
+
+/**
+ * Normalization scope for the attribution color range. Levels are encoded at
+ * their own max |x|, so any coarser scope is a pure display-time rescale.
+ */
+export type AttributionNormalizationMode =
+  | 'global'                 // per method, across all its frames (default)
+  | 'all-methods'            // across every method and frame
+  | 'per-frame'              // per method, per frame
+  | 'per-frame-all-methods'  // per frame, across methods (matched by timestamp)
+  | 'per-level'              // every level uses its own max
+
+export const ATTRIBUTION_NORMALIZATION_MODES: AttributionNormalizationMode[] = [
+  'global',
+  'all-methods',
+  'per-frame',
+  'per-frame-all-methods',
+  'per-level',
+]
+
+export const ATTRIBUTION_NORMALIZATION_LABELS: Record<AttributionNormalizationMode, string> = {
+  'global': 'Per method',
+  'all-methods': 'All methods',
+  'per-frame': 'Per frame',
+  'per-frame-all-methods': 'Per frame, all methods',
+  'per-level': 'Per level',
 }
 
 export interface TargetPoint {
@@ -210,6 +243,8 @@ export interface DenseGridInput {
   contours?: boolean
   /** Optional Python-side default: render absolute magnitude instead of signed values */
   absolute?: boolean
+  /** Optional Python-side default: normalization scope for the color range */
+  normalization?: AttributionNormalizationMode
   /** Optional Python-side defaults for the initial viewer state */
   viewerOptions?: ViewerInitialOptions
   targetColor: string
@@ -249,6 +284,8 @@ export interface ViewerLaunchState {
   contours?: boolean
   /** Absolute-magnitude depiction; optional so launch URLs from older builds stay valid */
   absolute?: boolean
+  /** Normalization scope; optional so launch URLs from older builds stay valid */
+  normalization?: AttributionNormalizationMode
   /** Per-method preset palette overrides; optional so launch URLs from older builds stay valid */
   attributionColorSchemes?: Record<string, AttributionPresetColormap>
   /** Full overlay UI state (visibility, opacity, colormap, contrast stretch); optional so launch URLs from older builds stay valid */

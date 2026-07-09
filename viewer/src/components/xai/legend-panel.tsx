@@ -15,6 +15,11 @@ interface LegendPanelProps {
   diverging: boolean
   contours?: boolean
   methodLabel?: string
+  /**
+   * Raw-value magnitude the colormap end corresponds to under the current
+   * normalization scope; null renders the relative −1…+1 (or 0…1) labels.
+   */
+  attributionMaxAbs?: number | null
   overlays?: Record<string, OverlayData>
   overlayStates: OverlayLayerState[]
 }
@@ -120,10 +125,19 @@ export function LegendPanel({
   attributionColorScheme,
   diverging,
   contours = false,
+  attributionMaxAbs = null,
   overlays,
   overlayStates,
 }: LegendPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+
+  const hasMaxAbs = typeof attributionMaxAbs === 'number' && attributionMaxAbs > 0
+  const legendMin = hasMaxAbs
+    ? (diverging ? `−${formatValue(attributionMaxAbs)}` : '0')
+    : (diverging ? '−1' : '0')
+  const legendMax = hasMaxAbs
+    ? (diverging ? `+${formatValue(attributionMaxAbs)}` : formatValue(attributionMaxAbs))
+    : (diverging ? '+1' : '1')
 
   const overlayEntries = Object.entries(overlays ?? {}).filter(([slug]) =>
     overlayStates.find((s) => s.slug === slug)?.visible ?? overlays?.[slug]?.visible ?? true
@@ -152,11 +166,11 @@ export function LegendPanel({
               style={{ background: attributionGradientCss(attributionColorScheme, diverging) }}
             />
             <div className="mt-1 grid grid-cols-3 text-[10px] font-mono tabular-nums text-muted-foreground">
-              <span>{diverging ? '−1' : '0'}</span>
+              <span>{legendMin}</span>
               <span className={cn('text-center', !diverging && 'opacity-0')} aria-hidden={!diverging}>
                 0
               </span>
-              <span className="text-right">{diverging ? '+1' : '1'}</span>
+              <span className="text-right">{legendMax}</span>
             </div>
           </>
         )}

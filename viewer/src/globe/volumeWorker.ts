@@ -23,6 +23,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       smoothEnabled,
       smoothSigma,
       absolute,
+      normScales,
     } = e.data as BuildVolumeFromGridsParams & { id: string; msgType: 'buildFromGrids' }
     const result = buildVolumeDataFromGrids({
       grids,
@@ -31,6 +32,7 @@ self.onmessage = (e: MessageEvent<WorkerMessage>) => {
       smoothEnabled,
       smoothSigma,
       absolute,
+      normScales,
     })
     data = result.data
     width = result.width
