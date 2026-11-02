@@ -28,10 +28,10 @@ export function BasemapAttribution({ mapType, className }: BasemapAttributionPro
       ) : (
         <>
           Basemap:{' '}
-          <a className="underline-offset-2 hover:underline" href="https://carto.com/" target="_blank" rel="noreferrer">
-            CARTO
+          <a className="underline-offset-2 hover:underline" href="https://www.esri.com/" target="_blank" rel="noreferrer">
+            Esri
           </a>
-          {' | '}
+          , HERE, Garmin,{' '}
           <a
             className="underline-offset-2 hover:underline"
             href="https://www.openstreetmap.org/copyright"
@@ -40,6 +40,7 @@ export function BasemapAttribution({ mapType, className }: BasemapAttributionPro
           >
             OpenStreetMap contributors
           </a>
+          , GIS User Community
         </>
       )}
     </div>

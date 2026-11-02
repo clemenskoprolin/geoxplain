@@ -2,7 +2,7 @@ import type { GlobeMapType, ViewerMode } from '@/types'
 
 const ATTRIBUTION_TEXT: Record<GlobeMapType, string> = {
   satellite: 'Imagery: Esri, Vantor, Earthstar Geographics, GIS User Community',
-  topo: 'Basemap: CARTO | OpenStreetMap contributors',
+  topo: 'Basemap: Esri, HERE, Garmin, OpenStreetMap contributors, GIS User Community',
 }
 
 function nextPaint(): Promise<void> {

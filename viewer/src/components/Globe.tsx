@@ -83,9 +83,7 @@ const TILE_URLS: Record<GlobeMapType, (x: number, y: number, level: number) => s
   satellite: (x, y, level) =>
     `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${level}/${y}/${x}`,
   topo: (x, y, level) =>
-    // Previous outline/label option:
-    // `https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/${level}/${y}/${x}`,
-    `https://a.basemaps.cartocdn.com/light_nolabels/${level}/${x}/${y}.png`,
+    `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/${level}/${y}/${x}`,
 }
 
 // Volume shell radii (paper-thin, hugs the surface)
@@ -693,14 +691,24 @@ function GlobeViewInner({
     globeRef.current.pointOfView({ lat, lng, altitude }, durationMs)
   }, [requestedView, globeReady])
 
-  // Map type change → clear tiles + nudge
+  // Esri Light Gray is served as 256px tiles. Request one finer zoom level
+  // for the light basemap on large globes, then refresh the tile cache.
+  // Three-globe exposes the LOD distance thresholds on its tile-engine object.
   useEffect(() => {
     const g = globeRef.current
-    if (!g) return
+    if (!g || !globeReady) return
+    g.scene().traverse((object) => {
+      const engine = object as THREE.Object3D & { thresholds?: number[] }
+      if (Array.isArray(engine.thresholds) && engine.thresholds.length === 30) {
+        engine.thresholds = engine.thresholds.map((_, level) =>
+          (mapType === 'topo' ? 12 : 8) / 2 ** level,
+        )
+      }
+    })
     g.globeTileEngineClearCache()
     const { lat, lng, altitude } = g.pointOfView()
     g.pointOfView({ lat, lng, altitude: altitude + 1e-7 }, 0)
-  }, [mapType])
+  }, [mapType, globeReady])
 
   // Scroll/pinch zoom → display only
   const handleZoom = useCallback(

@@ -73005,19 +73005,21 @@ function gDe({ mapType: e, className: t }) {
 			" ",
 			/* @__PURE__ */ (0, d9.jsx)("a", {
 				className: "underline-offset-2 hover:underline",
-				href: "https://carto.com/",
+				href: "https://www.esri.com/",
 				target: "_blank",
 				rel: "noreferrer",
-				children: "CARTO"
+				children: "Esri"
 			}),
-			" | ",
+			", HERE, Garmin,",
+			" ",
 			/* @__PURE__ */ (0, d9.jsx)("a", {
 				className: "underline-offset-2 hover:underline",
 				href: "https://www.openstreetmap.org/copyright",
 				target: "_blank",
 				rel: "noreferrer",
 				children: "OpenStreetMap contributors"
-			})
+			}),
+			", GIS User Community"
 		] })
 	});
 }
@@ -73273,15 +73275,18 @@ function vDe({ points: e, pressureLevels: t, cameraZoom: n, mapType: r, onZoomCh
 		}, r);
 	}, [w, R]), (0, f9.useEffect)(() => {
 		let e = j.current;
-		if (!e) return;
-		e.globeTileEngineClearCache();
-		let { lat: t, lng: n, altitude: r } = e.pointOfView();
+		if (!e || !R) return;
+		e.scene().traverse((e) => {
+			let t = e;
+			Array.isArray(t.thresholds) && t.thresholds.length === 30 && (t.thresholds = t.thresholds.map((e, t) => (r === "topo" ? 12 : 8) / 2 ** t));
+		}), e.globeTileEngineClearCache();
+		let { lat: t, lng: n, altitude: i } = e.pointOfView();
 		e.pointOfView({
 			lat: t,
 			lng: n,
-			altitude: r + 1e-7
+			altitude: i + 1e-7
 		}, 0);
-	}, [r]);
+	}, [r, R]);
 	let Ae = (0, f9.useCallback)((e) => {
 		Ee(), i(Math.min(128, Math.max(h9, m9 / e.altitude))), B.current?.(e.lat, e.lng, e.altitude);
 	}, [i, Ee]), je = I ? [] : t.filter((e) => e.visible && e.opacity > 0).map((t, n) => ({
@@ -73338,7 +73343,7 @@ function vDe({ points: e, pressureLevels: t, cameraZoom: n, mapType: r, onZoomCh
 var f9, p9, m9, h9, yDe, g9, _9, v9, bDe, y9, xDe, SDe, CDe = o((() => {
 	f9 = /* @__PURE__ */ u(f(), 1), sEe(), lO(), A7(), I_(), N7(), G7(), VEe(), Z7(), UEe(), GEe(), KEe(), nDe(), iDe(), hDe(), _De(), p9 = xr(), m9 = 1.5, h9 = .25, yDe = {
 		satellite: (e, t, n) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${n}/${t}/${e}`,
-		topo: (e, t, n) => `https://a.basemaps.cartocdn.com/light_nolabels/${n}/${e}/${t}.png`
+		topo: (e, t, n) => `https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/${n}/${t}/${e}`
 	}, g9 = 100, _9 = 100 * 1.004, v9 = .7, bDe = {
 		preserveDrawingBuffer: !0,
 		alpha: !0
@@ -107432,8 +107437,8 @@ function JDe({ volumeCache: e, points: t, pressureLevels: n, mapType: r, frameKe
 					topo: {
 						type: "raster",
 						tiles: [D9.topo],
-						tileSize: 256,
-						attribution: "Basemap: CARTO | OpenStreetMap contributors"
+						tileSize: 192,
+						attribution: "Basemap: Esri, HERE, Garmin, OpenStreetMap contributors, GIS User Community"
 					}
 				},
 				layers: [{
@@ -107600,7 +107605,7 @@ function JDe({ volumeCache: e, points: t, pressureLevels: n, mapType: r, frameKe
 var T9, YDe, E9, D9, O9, XDe = o((() => {
 	T9 = /* @__PURE__ */ u(f(), 1), YDe = /* @__PURE__ */ u(wDe(), 1), TDe(), A7(), I_(), MDe(), UDe(), qDe(), _De(), E9 = xr(), D9 = {
 		satellite: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-		topo: "https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png"
+		topo: "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}"
 	}, O9 = 1.5;
 }));
 //#endregion
@@ -107676,7 +107681,7 @@ async function cOe({ surface: e, viewMode: t, mapType: n }) {
 var lOe, uOe = o((() => {
 	lOe = {
 		satellite: "Imagery: Esri, Vantor, Earthstar Geographics, GIS User Community",
-		topo: "Basemap: CARTO | OpenStreetMap contributors"
+		topo: "Basemap: Esri, HERE, Garmin, OpenStreetMap contributors, GIS User Community"
 	};
 }));
 //#endregion

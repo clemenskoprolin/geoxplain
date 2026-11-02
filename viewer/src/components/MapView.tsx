@@ -1,7 +1,7 @@
 /**
  * 2D MapLibre view with the volumetric attribution overlay.
  *
- * - Displays ArcGIS raster tiles (satellite / topo) via two MapLibre sources
+ * - Displays Esri raster tiles (satellite / light gray) via two MapLibre sources
  *   with visibility toggling (no flicker on switch)
  * - Installs VolumeOverlayLayer after map load; layer reads from the shared
  *   VolumeCache so no redundant builds happen when switching globe ↔ map
@@ -22,11 +22,10 @@ import { createOverlaysLayer } from '@/map/OverlayLayer'
 import { useMapTargetOverlay } from '@/map/useMapTargetOverlay'
 import { BasemapAttribution } from './BasemapAttribution'
 
-// Tile templates (ArcGIS — same origins as globe renderer)
+// Tile templates (Esri — same origins as globe renderer)
 const TILE_URLS: Record<GlobeMapType, string> = {
   satellite: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
-  //topo: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Shaded_Relief/MapServer/tile/{z}/{y}/{x}',
-  topo: 'https://a.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}.png',
+  topo: 'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}',
 }
 
 /** Default zoom (~ global overview). Buttons delta from this baseline. */
@@ -199,8 +198,9 @@ export default function MapView({
           topo: {
             type: 'raster',
             tiles: [TILE_URLS.topo],
-            tileSize: 256,
-            attribution: 'Basemap: CARTO | OpenStreetMap contributors',
+            // Oversample the 256px Esri tiles by one zoom level on large displays.
+            tileSize: 192,
+            attribution: 'Basemap: Esri, HERE, Garmin, OpenStreetMap contributors, GIS User Community',
           },
         },
         layers: [

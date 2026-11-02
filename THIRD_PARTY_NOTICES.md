@@ -42,8 +42,9 @@ The viewer can display third-party basemap and imagery layers. In-app
 attribution is shown by the viewer and should be preserved where required by
 the providers:
 
-- CARTO and OpenStreetMap contributors for the standard map basemap.
-  OpenStreetMap data is available under the Open Database License.
+- Esri, HERE, Garmin, OpenStreetMap contributors, and the GIS User Community
+  for the light gray basemap. OpenStreetMap data is available under the Open
+  Database License.
 - Esri, Vantor, Earthstar Geographics, and the GIS User Community for satellite
   imagery.
 
