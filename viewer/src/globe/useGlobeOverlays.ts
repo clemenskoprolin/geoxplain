@@ -18,6 +18,7 @@ import {
 
 // Overlay sphere sits just above the globe surface, below the volume shell.
 const R_OVERLAY = GLOBE_RADIUS * 1.001
+export const GLOBE_WEATHER_OVERLAY_RENDER_ORDER = 1000
 
 interface GlobeOverlayParams {
   overlays?: Record<string, OverlayData> | null
@@ -206,7 +207,7 @@ export function useGlobeOverlays(
           })
           const geo = new THREE.SphereGeometry(R_OVERLAY, 96, 48)
           const mesh = new THREE.Mesh(geo, mat)
-          mesh.renderOrder = 1000
+          mesh.renderOrder = GLOBE_WEATHER_OVERLAY_RENDER_ORDER
           mesh.frustumCulled = false
           scene.add(mesh)
           entry = {

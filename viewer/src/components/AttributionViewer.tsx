@@ -13,22 +13,24 @@ import { downloadViewerScreenshot } from '@/lib/screenshot'
 import { getCurrentTheme } from '@/lib/theme'
 import { useThemeContext } from '@/theme-context'
 import { DEFAULT_ATTRIBUTION_COLOR_SCHEME } from '@/lib/attributionColor'
+import { orderedOverlayUiColormaps } from '@/lib/overlayColor'
 import { DEFAULT_TARGET_COLOR } from '@/lib/targets'
 import {
   DEFAULT_PRESSURE_LEVELS,
   DEFAULT_APP_SUBTITLE,
   DEFAULT_APP_TITLE,
   buildLevelsFromData,
-  OVERLAY_COLORMAPS,
   type AttributionNormalizationMode,
   type AttributionPoint,
   type AttributionPresetColormap,
   type DenseGridInput,
   type DenseLevelGrid,
   type GlobeMapType,
+  type OverlayColormap,
   type OverlayLayerState,
   type PressureLevel,
   type TimestampData,
+  type ViewerGlobeCameraState,
   type ViewerLaunchState,
   type ViewerMapCameraState,
   type ViewerMode,
@@ -56,6 +58,8 @@ const MAP_ZOOM_STEP = Math.log2(1.25)
 const DEFAULT_IMPORTED_GRID_SMOOTH_SIGMA = 0.5
 const MIN_AUTO_ZOOM = DEFAULT_MAP_ZOOM
 const MAX_AUTO_ZOOM = 3.5
+const AUTO_ZOOM_DURATION_MS = 1200
+const AUTO_ZOOM_SETTLE_MS = 50
 const EMPTY_ATTRIBUTION_POINTS: AttributionPoint[] = []
 const MAP_CYCLE: GlobeMapType[] = ['satellite', 'topo']
 
@@ -105,7 +109,10 @@ export function AttributionViewer({
   onScreenshotStateChange,
 }: AttributionViewerProps) {
   const launchViewMode = initialLaunchState?.viewMode ?? initialViewMode
-  const launchGlobeCamera = initialLaunchState?.globeCamera ?? { lat: 47, lng: 10, altitude: DEFAULT_ALTITUDE }
+  const launchGlobeCamera = useMemo<ViewerGlobeCameraState>(
+    () => initialLaunchState?.globeCamera ?? { lat: 47, lng: 10, altitude: DEFAULT_ALTITUDE },
+    [initialLaunchState],
+  )
   const launchMapCamera: ViewerMapCameraState = initialLaunchState?.mapCamera ?? { lng: 10, lat: 47, zoom: DEFAULT_MAP_ZOOM, pitch: 0 }
   const launchGlobeAltitude = launchGlobeCamera.altitude > 0 ? launchGlobeCamera.altitude : DEFAULT_ALTITUDE
   const launchGlobeZoom = Math.min(MAX_GLOBE_ZOOM, Math.max(MIN_GLOBE_ZOOM, DEFAULT_ALTITUDE / launchGlobeAltitude))
@@ -155,6 +162,7 @@ export function AttributionViewer({
   const [emptyDataHintDismissed, setEmptyDataHintDismissed] = useState(false)
   const [mapRendererReady, setMapRendererReady] = useState(false)
   const [globeRendererReady, setGlobeRendererReady] = useState(false)
+  const [initialCameraSettled, setInitialCameraSettled] = useState(initialLaunchState !== undefined)
   const [isDownloadingScreenshot, setIsDownloadingScreenshot] = useState(false)
   const [viewStateVersion, setViewStateVersion] = useState(0)
   const [screenshotSurfaceSize, setScreenshotSurfaceSize] = useState({ width: 0, height: 0 })
@@ -175,13 +183,19 @@ export function AttributionViewer({
   const savedMapViewRef   = useRef(launchMapCamera)
   const transitionTimersRef = useRef<ReturnType<typeof setTimeout>[]>([])
   const resetViewLockTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const autoZoomSettleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const autoZoomedRef = useRef(false)
+  const previousOverlayColormapsRef = useRef<Record<string, OverlayColormap>>({})
+  const launchOverlayStateSlugsRef = useRef(new Set(
+    initialLaunchState?.overlayLayerStates?.map((state) => state.slug) ?? [],
+  ))
   const screenshotSurfaceRef = useRef<HTMLElement | null>(null)
 
   const [volumeCache] = useState(() => new VolumeCache())
   useEffect(() => () => volumeCache.dispose(), [volumeCache])
   useEffect(() => () => {
     if (resetViewLockTimerRef.current) clearTimeout(resetViewLockTimerRef.current)
+    if (autoZoomSettleTimerRef.current) clearTimeout(autoZoomSettleTimerRef.current)
   }, [])
 
   const hasExternalData = externalData !== null
@@ -292,17 +306,30 @@ export function AttributionViewer({
     setEmptyDataHintDismissed(false)
   }, [externalData])
 
-  // On the first XAI data import, auto-zoom to the region with significant attribution.
+  // On the first XAI data import, auto-zoom to the region with significant
+  // attribution unless a launch state explicitly restored the cameras.
   useEffect(() => {
     if (!externalData) {
       autoZoomedRef.current = false
+      setInitialCameraSettled(initialLaunchState !== undefined)
       return
     }
     if (autoZoomedRef.current) return
     autoZoomedRef.current = true
 
+    // Launch state is authoritative. In particular, screenshot() uses it to
+    // reproduce the widget's current view and must not be overwritten by the
+    // data-driven auto-fit below.
+    if (initialLaunchState) {
+      setInitialCameraSettled(true)
+      return
+    }
+
     const bounds = computeDataBounds(externalData)
-    if (!bounds) return
+    if (!bounds) {
+      setInitialCameraSettled(true)
+      return
+    }
 
     const { latMin, latMax, lonMin, lonMax } = bounds
     const centerLat = (latMin + latMax) / 2
@@ -320,37 +347,69 @@ export function AttributionViewer({
 
     savedGlobeViewRef.current = { lat: centerLat, lng: centerLng, altitude: targetAlt }
     savedMapViewRef.current = { lng: centerLng, lat: centerLat, zoom: targetZoom, pitch: 0 }
+    setInitialCameraSettled(false)
     setMapZoom(targetZoom)
     setDisplayZoom(Math.pow(2, targetZoom - DEFAULT_MAP_ZOOM))
-    setMapRequestedView({ lng: centerLng, lat: centerLat, zoom: targetZoom, durationMs: 1200, id: Date.now() })
-    setGlobeRequestedView({ lat: centerLat, lng: centerLng, altitude: targetAlt, durationMs: 1200, id: Date.now() })
+    setMapRequestedView({ lng: centerLng, lat: centerLat, zoom: targetZoom, durationMs: AUTO_ZOOM_DURATION_MS, id: Date.now() })
+    setGlobeRequestedView({ lat: centerLat, lng: centerLng, altitude: targetAlt, durationMs: AUTO_ZOOM_DURATION_MS, id: Date.now() })
     setViewStateVersion((version) => version + 1)
-  }, [externalData, initialZoomOutFactor])
+    if (autoZoomSettleTimerRef.current) clearTimeout(autoZoomSettleTimerRef.current)
+    autoZoomSettleTimerRef.current = setTimeout(() => {
+      autoZoomSettleTimerRef.current = null
+      setInitialCameraSettled(true)
+    }, AUTO_ZOOM_DURATION_MS + AUTO_ZOOM_SETTLE_MS)
+  }, [externalData, initialLaunchState, initialZoomOutFactor])
 
-  // Sync overlay layer states when externalData.overlays changes.
-  // Preserves existing user overrides (opacity, colormap, visibility) for slugs
-  // that are already in state; adds defaults for new slugs; removes stale ones.
+  // Sync overlay layer states when externalData.overlays changes. A newly
+  // imported custom palette becomes selected for that overlay; subsequent data
+  // refreshes preserve user overrides, as do explicit launch-state choices.
   useEffect(() => {
-    const incomingSlugs = Object.keys(externalData?.overlays ?? {})
+    // The standalone browser fetches its payload after this component mounts.
+    // Do not erase URL-restored overlay state during that initial null-data gap.
+    if (!externalData) return
+
+    const incomingOverlays = externalData.overlays ?? {}
+    const incomingSlugs = Object.keys(incomingOverlays)
+    const previousColormaps = previousOverlayColormapsRef.current
     setOverlayLayerStates((prev) => {
       const prevBySlug = new Map(prev.map((s) => [s.slug, s]))
       return incomingSlugs.map((slug) => {
         const existing = prevBySlug.get(slug)
-        if (existing) return existing
-        const overlay = externalData?.overlays?.[slug]
+        const overlay = incomingOverlays[slug]
         const defaultColormap = overlay?.colormap ?? 'viridis'
+        const hasCustom = defaultColormap === 'custom' && !!overlay?.colormapStops?.length
+        const displayedColormaps = orderedOverlayUiColormaps(hasCustom)
+        const resolvedDefault = displayedColormaps.includes(defaultColormap)
+          ? defaultColormap
+          : 'viridis'
+
+        if (existing) {
+          const hasLaunchOverride = launchOverlayStateSlugsRef.current.has(slug)
+          const customWasImported = hasCustom && previousColormaps[slug] !== 'custom'
+          if (!hasLaunchOverride && customWasImported) {
+            return { ...existing, colormap: 'custom' }
+          }
+          if (!hasLaunchOverride && !displayedColormaps.includes(existing.colormap)) {
+            return { ...existing, colormap: resolvedDefault }
+          }
+          return existing
+        }
+
         const defaultVisible = overlay?.visible ?? true
         return {
           slug,
           visible: defaultVisible,
           opacity: overlay?.opacity ?? 0.7,
-          colormap: OVERLAY_COLORMAPS.includes(defaultColormap as never) ? defaultColormap as OverlayLayerState['colormap'] : 'viridis',
+          colormap: resolvedDefault,
           stretchLow: overlay?.stretchLow ?? 0,
           stretchHigh: overlay?.stretchHigh ?? 1,
         }
       })
     })
-  }, [externalData?.overlays])
+    previousOverlayColormapsRef.current = Object.fromEntries(
+      incomingSlugs.map((slug) => [slug, incomingOverlays[slug]!.colormap]),
+    )
+  }, [externalData])
 
   const {
     selectorMethods,
@@ -632,7 +691,10 @@ export function AttributionViewer({
 
   const { scopedRoot } = useThemeContext()
 
-  const viewerReady = hasExternalData && !isTransitioning && (viewMode === 'map' ? mapRendererReady : globeRendererReady)
+  const viewerReady = hasExternalData
+    && initialCameraSettled
+    && !isTransitioning
+    && (viewMode === 'map' ? mapRendererReady : globeRendererReady)
 
   const buildCurrentLaunchState = useCallback((): ViewerLaunchState => {
     // savedGlobeViewRef/savedMapViewRef are mutable and don't trigger renders;
@@ -784,6 +846,7 @@ export function AttributionViewer({
             nextPoints={nextPoints}
             nextExternalGrids={nextExternalLevels}
             nextNormScales={nextNormScales?.scales ?? null}
+            initialView={launchGlobeCamera}
             onViewChange={handleGlobeViewChange}
             requestedView={globeRequestedView}
             isActive={globeVisible || isTransitioning}

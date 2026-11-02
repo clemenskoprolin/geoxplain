@@ -220,7 +220,8 @@ class GeoXplainWidget(_BrowserExportMixin, GeoXplainBase, anywidget.AnyWidget):
         When ``width`` or ``height`` is omitted, the latest dimensions reported
         by the rendered widget are used, falling back to 1100 pixels by the
         configured widget height. ``launch_state`` overrides the latest camera
-        and viewer state reported by the frontend.
+        and viewer state reported by the frontend. Its cameras take precedence
+        over the viewer's initial data auto-fit.
 
         Returns
         -------

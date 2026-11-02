@@ -13,6 +13,8 @@ import type { OverlayColorStop, OverlayColormap, OverlayData, OverlayLayerState 
 import { buildOverlayColormapTexture, overlayColormapId, overlayStopsSignature } from '@/lib/overlayColor'
 import { overlayVertexShader, overlayFragmentShader } from './overlayShaders'
 
+export const WEATHER_OVERLAYS_LAYER_ID = 'overlays-layer'
+
 export interface OverlaysLayerOptions {
   getOverlays: () => Record<string, OverlayData> | null | undefined
   getOverlayStates: () => OverlayLayerState[]
@@ -179,7 +181,7 @@ export function createOverlaysLayer(opts: OverlaysLayerOptions): CustomLayerInte
   }
 
   return {
-    id: 'overlays-layer',
+    id: WEATHER_OVERLAYS_LAYER_ID,
     type: 'custom',
     renderingMode: '3d',
 

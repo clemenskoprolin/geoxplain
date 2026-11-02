@@ -3,7 +3,7 @@ import GlobeGL from 'react-globe.gl'
 import type { GlobeMethods } from 'react-globe.gl'
 import * as THREE from 'three'
 import { DEFAULT_TARGET_COLOR, normalizeTargetColor, targetSignature } from '@/lib/targets'
-import type { AttributionColorScheme, AttributionPoint, DenseLevelGrid, GlobeMapType, OverlayData, OverlayLayerState, PressureLevel, ViewerTarget } from '@/types'
+import type { AttributionColorScheme, AttributionPoint, DenseLevelGrid, GlobeMapType, OverlayData, OverlayLayerState, PressureLevel, ViewerGlobeCameraState, ViewerTarget } from '@/types'
 import {
   attributionColorSchemeId,
   attributionColorSchemeSignature,
@@ -24,7 +24,7 @@ import {
   setTargetGroupOpacity,
 } from '@/globe/targetOverlay'
 import { useContainerSize } from '@/globe/useContainerSize'
-import { useGlobeOverlays } from '@/globe/useGlobeOverlays'
+import { GLOBE_WEATHER_OVERLAY_RENDER_ORDER, useGlobeOverlays } from '@/globe/useGlobeOverlays'
 import { BasemapAttribution } from './BasemapAttribution'
 
 interface GlobeViewProps {
@@ -54,6 +54,8 @@ interface GlobeViewProps {
   nextExternalGrids?: Record<string, DenseLevelGrid> | null
   /** Per-level normalization rescale factors for the prefetched next frame. */
   nextNormScales?: Record<string, number> | null
+  /** Camera applied synchronously when the globe renderer first becomes ready. */
+  initialView?: ViewerGlobeCameraState
   onViewChange?: (lat: number, lng: number, altitude: number) => void
   /** Repeated camera moves are keyed by id so identical positions still run. */
   requestedView?: { lat: number; lng: number; altitude: number; durationMs: number; id: number }
@@ -93,6 +95,8 @@ const R_OUTER_FLAT = GLOBE_RADIUS * (1 + 0.004)
 const ALPHA_FLAT = 0.7
 
 const GLOBE_RENDERER_CONFIG = { preserveDrawingBuffer: true, alpha: true }
+const ATTRIBUTION_HEATMAP_RENDER_ORDER = 999
+const ATTRIBUTION_CONTOUR_RENDER_ORDER = GLOBE_WEATHER_OVERLAY_RENDER_ORDER + 1
 
 function GlobeViewInner({
   points,
@@ -117,6 +121,7 @@ function GlobeViewInner({
   nextPoints,
   nextExternalGrids,
   nextNormScales = null,
+  initialView,
   onViewChange,
   requestedView,
   isActive = true,
@@ -137,6 +142,7 @@ function GlobeViewInner({
   const buildingIndicatorRef = useRef<HTMLDivElement>(null)
 
   const onViewChangeRef = useRef(onViewChange)
+  const initialViewRef = useRef(initialView)
 
   // Volumetric rendering refs (persistent across renders)
   const volumeMeshRef = useRef<THREE.Mesh | null>(null)
@@ -232,7 +238,7 @@ function GlobeViewInner({
   const handleGlobeReady = useCallback(() => {
     const g = globeRef.current
     if (!g) return
-    g.pointOfView({ lat: 47, lng: 10, altitude: DEFAULT_ALTITUDE }, 0)
+    g.pointOfView(initialViewRef.current ?? { lat: 47, lng: 10, altitude: DEFAULT_ALTITUDE }, 0)
     didMountRef.current = true
 
     g.renderer().compile(g.scene(), g.camera())
@@ -305,7 +311,7 @@ function GlobeViewInner({
     // analytic shell closely near the limb.
     const geo = new THREE.SphereGeometry(R_OUTER_FLAT, 96, 48)
     const mesh = new THREE.Mesh(geo, mat)
-    mesh.renderOrder = 999 // render after globe tiles
+    mesh.renderOrder = ATTRIBUTION_HEATMAP_RENDER_ORDER // render after globe tiles
     volumeMeshRef.current = mesh
     g.scene().add(mesh)
 
@@ -367,6 +373,11 @@ function GlobeViewInner({
     const mat = materialRef.current
     if (!mat) return
     mat.uniforms.uContours.value = contours
+    if (volumeMeshRef.current) {
+      volumeMeshRef.current.renderOrder = contours
+        ? ATTRIBUTION_CONTOUR_RENDER_ORDER
+        : ATTRIBUTION_HEATMAP_RENDER_ORDER
+    }
   }, [contours, globeReady])
 
   useEffect(() => {

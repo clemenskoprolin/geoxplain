@@ -3,7 +3,11 @@ import { cn } from '@/lib/utils'
 import { Switch } from '@/components/ui/switch'
 import { Slider } from '@/components/ui/slider'
 import { type OverlayColormap, type OverlayData, type OverlayLayerState } from '@/types'
-import { OVERLAY_COLORMAP_LABELS, overlayGradientCss } from '@/lib/overlayColor'
+import {
+  orderedOverlayUiColormaps,
+  OVERLAY_COLORMAP_LABELS,
+  overlayGradientCss,
+} from '@/lib/overlayColor'
 
 interface OverlayPanelProps {
   overlays: Record<string, OverlayData>
@@ -167,7 +171,8 @@ export function OverlayPanel({ overlays, overlayStates, onOverlayStatesChange }:
   }
 
   function displayColormaps(overlayData: OverlayData): OverlayColormap[] {
-    return ['viridis', 'plasma', overlayData.colormapStops ? 'custom' : 'sequential']
+    const hasCustom = overlayData.colormap === 'custom' && !!overlayData.colormapStops?.length
+    return orderedOverlayUiColormaps(hasCustom)
   }
 
   const visibleCount = slugs.filter((s) => getState(s).visible).length
@@ -210,6 +215,7 @@ export function OverlayPanel({ overlays, overlayStates, onOverlayStatesChange }:
             return (
               <div
                 key={slug}
+                data-geoxplain-overlay-slug={slug}
                 className={cn(
                   'p-3 rounded-md transition-all duration-200',
                   state.visible ? 'bg-secondary/50' : 'bg-secondary/20 opacity-60',

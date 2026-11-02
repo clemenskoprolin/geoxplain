@@ -280,7 +280,8 @@ class GeoXplain(GeoXplainBase):
 
         ``out_path`` may be a file or directory. When omitted, a generated
         filename is placed under ``output_dir``. The optional ``launch_state``
-        restores an explicit camera and viewer configuration for the capture.
+        restores an explicit camera and viewer configuration for the capture;
+        its cameras take precedence over the viewer's initial data auto-fit.
 
         Returns
         -------

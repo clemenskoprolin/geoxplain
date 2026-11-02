@@ -47,6 +47,15 @@ import numpy as np
 
 #: Archive layout this loader was written against (stored in ``meta.json``).
 _FORMAT_VERSION = 2
+_XIA_RESULT_SUFFIX = ".xia.npz"
+
+
+def _resolve_xia_result_path(path: str | os.PathLike) -> str:
+    """Resolve the suffix automatically added by backend ``save()`` methods."""
+    resolved = os.fspath(path)
+    if resolved.endswith(_XIA_RESULT_SUFFIX) or os.path.exists(resolved):
+        return resolved
+    return resolved + _XIA_RESULT_SUFFIX
 
 
 def _warn_on_format_version(meta_payload: dict, *, expected: int, path: str) -> None:
@@ -178,7 +187,9 @@ def load_xia_result(path: str | os.PathLike) -> XiaResultFile:
     Parameters
     ----------
     path:
-        Path to the ``.xia.npz`` archive (``format_version == 2``).
+        Path to the ``.xia.npz`` archive (``format_version == 2``). When the
+        supplied path does not exist and omits ``.xia.npz``, the suffix is
+        appended automatically to mirror backend ``save()`` methods.
 
     Returns
     -------
@@ -186,7 +197,7 @@ def load_xia_result(path: str | os.PathLike) -> XiaResultFile:
     and can be passed to ``GeoXplain.add_attribution()`` or
     ``GeoXplainWidget.add_attribution()``.
     """
-    path = os.fspath(path)
+    path = _resolve_xia_result_path(path)
     with zipfile.ZipFile(path, "r") as zf:
         meta_payload: dict = json.loads(zf.read("meta.json"))
         _warn_on_format_version(meta_payload, expected=_FORMAT_VERSION, path=path)

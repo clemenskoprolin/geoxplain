@@ -171,13 +171,31 @@ vec3 overlayPlasma(float t) {
   return mix(c9, c10, (t - 0.9) / 0.1);
 }
 
-// thermal: deep blue (cold) → cyan → yellow → deep red (hot)
+// thermal: dark blue (cold) → purple → red → orange → yellow (hot)
 vec3 overlayThermal(float t) {
   t = clamp(t, 0.0, 1.0);
-  if (t < 0.25)      return vec3(0.0, t * 4.0, 1.0);
-  else if (t < 0.5)  return vec3(0.0, 1.0, 1.0 - (t - 0.25) * 4.0);
-  else if (t < 0.75) return vec3((t - 0.5) * 4.0, 1.0, 0.0);
-  else               return vec3(1.0, 1.0 - (t - 0.75) * 4.0, 0.0);
+  vec3 c0  = vec3(0.015556, 0.138244, 0.201811);
+  vec3 c1  = vec3(0.062435, 0.195506, 0.419729);
+  vec3 c2  = vec3(0.250197, 0.203373, 0.625368);
+  vec3 c3  = vec3(0.408319, 0.265319, 0.587978);
+  vec3 c4  = vec3(0.544138, 0.324732, 0.551934);
+  vec3 c5  = vec3(0.689335, 0.372704, 0.509691);
+  vec3 c6  = vec3(0.837574, 0.422127, 0.424070);
+  vec3 c7  = vec3(0.949777, 0.508044, 0.303884);
+  vec3 c8  = vec3(0.986874, 0.649770, 0.236998);
+  vec3 c9  = vec3(0.969346, 0.812506, 0.270021);
+  vec3 c10 = vec3(0.909042, 0.982157, 0.355508);
+
+  if (t < 0.1) return mix(c0, c1,  t / 0.1);
+  if (t < 0.2) return mix(c1, c2,  (t - 0.1) / 0.1);
+  if (t < 0.3) return mix(c2, c3,  (t - 0.2) / 0.1);
+  if (t < 0.4) return mix(c3, c4,  (t - 0.3) / 0.1);
+  if (t < 0.5) return mix(c4, c5,  (t - 0.4) / 0.1);
+  if (t < 0.6) return mix(c5, c6,  (t - 0.5) / 0.1);
+  if (t < 0.7) return mix(c6, c7,  (t - 0.6) / 0.1);
+  if (t < 0.8) return mix(c7, c8,  (t - 0.7) / 0.1);
+  if (t < 0.9) return mix(c8, c9,  (t - 0.8) / 0.1);
+  return mix(c9, c10, (t - 0.9) / 0.1);
 }
 
 // sequential: white → dark blue (simple perceptually uniform ramp)

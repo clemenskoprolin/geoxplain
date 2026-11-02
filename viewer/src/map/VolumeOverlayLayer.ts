@@ -22,6 +22,8 @@ import { buildOverlayColormapTexture } from '@/lib/overlayColor'
 import { VolumeCache } from '@/globe/volumeCache'
 import { mapVolumeVertexShader, mapVolumeFragmentShader } from './shaders'
 
+export const VOLUME_OVERLAY_LAYER_ID = 'volume-overlay'
+
 export interface VolumeOverlayOptions {
   volumeCache: VolumeCache
   getFrameKey: () => string
@@ -122,7 +124,7 @@ export function createVolumeOverlayLayer(opts: VolumeOverlayOptions): CustomLaye
   let mixValue = 1.0
 
   return {
-    id: 'volume-overlay',
+    id: VOLUME_OVERLAY_LAYER_ID,
     type: 'custom',
     renderingMode: '3d',
 

@@ -3,6 +3,7 @@ import urllib.request
 from pathlib import Path
 
 import numpy as np
+import pytest
 
 import geoxplain
 from geoxplain import GeoXplainWidget, GeoXplain
@@ -217,3 +218,242 @@ def test_widget_screenshot_falls_back_to_widget_height(monkeypatch, tmp_path):
         assert calls['launch_state'] is None
     finally:
         widget.close()
+
+
+def test_browser_launch_state_cameras_survive_initial_data_load(tmp_path):
+    playwright_api = pytest.importorskip('playwright.sync_api')
+    from geoxplain._screenshot import _ScreenshotServer, _screenshot_url
+    from geoxplain._static_server import _copy_browser_bundle, _write_json_atomic
+
+    viewer = GeoXplain(target_color='#00ff00')
+    viewer.add_attribution(
+        _array(),
+        pressure_level=850,
+        target={'lat': 30, 'lon': 120},
+    )
+    viewer.add_overlay(_array(), name='Launch Overlay', colormap='viridis')
+    viewer.add_overlay(_array(), name='Hidden Overlay', colormap='viridis')
+    launch_state = {
+        'selectedMethod': 'saliency',
+        'timestampIndex': 0,
+        'viewMode': 'map',
+        'mapType': 'topo',
+        'pressureLevels': [{'id': 'z-2', 'visible': True, 'opacity': 1.0}],
+        'smoothImportedGrids': True,
+        'smoothImportedGridSigma': 0.5,
+        'overlayLayerStates': [
+            {
+                'slug': 'launch-overlay',
+                'visible': True,
+                'opacity': 0.25,
+                'colormap': 'plasma',
+                'stretchLow': 0.2,
+                'stretchHigh': 0.8,
+            },
+            {
+                'slug': 'hidden-overlay',
+                'visible': False,
+                'opacity': 0.4,
+                'colormap': 'thermal',
+                'stretchLow': 0.1,
+                'stretchHigh': 0.9,
+            },
+        ],
+        'globeCamera': {'lat': 30, 'lng': 120, 'altitude': 1.5},
+        'mapCamera': {'lng': 120, 'lat': 30, 'zoom': 3, 'pitch': 0},
+    }
+
+    bundle_dir = tmp_path / 'browser'
+    _copy_browser_bundle(bundle_dir, hint='Build the frontend browser bundle.')
+    _write_json_atomic(bundle_dir / 'viewer_data.json', viewer._build_payload())
+    server = _ScreenshotServer(bundle_dir)
+
+    try:
+        with playwright_api.sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    args=['--use-gl=angle', '--use-angle=swiftshader'],
+                )
+            except playwright_api.Error as exc:
+                pytest.skip(f'Playwright Chromium is unavailable: {exc}')
+
+            try:
+                page = browser.new_page(
+                    viewport={'width': 1100, 'height': 820},
+                    device_scale_factor=1,
+                )
+                page.goto(
+                    _screenshot_url(server.href, launch_state),
+                    wait_until='load',
+                    timeout=15_000,
+                )
+                page.wait_for_selector(
+                    '[data-geoxplain-viewer-ready="true"]',
+                    timeout=15_000,
+                )
+
+                # The bug's auto-fit flight lasted 1200 ms. Waiting past it
+                # ensures this checks the stable camera, not its starting frame.
+                page.wait_for_timeout(1400)
+                position = page.locator(
+                    '[data-geoxplain-renderer-layer="map"] svg circle',
+                ).evaluate(
+                    """(circle) => {
+                      const svg = circle.ownerSVGElement
+                      const rect = svg.getBoundingClientRect()
+                      return {
+                        cx: Number(circle.getAttribute('cx')),
+                        cy: Number(circle.getAttribute('cy')),
+                        width: rect.width,
+                        height: rect.height,
+                        display: circle.getAttribute('display'),
+                      }
+                    }"""
+                )
+                overlay_state = page.locator(
+                    '[data-geoxplain-overlay-slug="launch-overlay"]',
+                ).evaluate(
+                    """(row) => {
+                      const handles = row.querySelectorAll(
+                        '[title^="Drag handles"] > div',
+                      )
+                      return {
+                        visible: row.querySelector('[role="switch"]')?.getAttribute('aria-checked'),
+                        opacity: row.querySelector('.pl-8.mb-2 .font-mono')?.textContent,
+                        colormap: row.querySelector('button[aria-pressed="true"]')?.getAttribute('aria-label'),
+                        stretchLow: handles[1]?.style.left,
+                        stretchHigh: handles[2]?.style.left,
+                      }
+                    }"""
+                )
+                hidden_overlay_visible = page.locator(
+                    '[data-geoxplain-overlay-slug="hidden-overlay"] [role="switch"]',
+                ).get_attribute('aria-checked')
+
+                globe_launch_state = {**launch_state, 'viewMode': 'globe'}
+                page.goto(
+                    _screenshot_url(server.href, globe_launch_state),
+                    wait_until='load',
+                    timeout=15_000,
+                )
+                page.wait_for_selector(
+                    '[data-geoxplain-viewer-ready="true"]',
+                    timeout=15_000,
+                )
+                page.wait_for_timeout(1400)
+                globe_marker = page.locator(
+                    '[data-geoxplain-renderer-layer="globe"] canvas',
+                ).evaluate(
+                    """(source) => {
+                      const copy = document.createElement('canvas')
+                      copy.width = source.width
+                      copy.height = source.height
+                      const context = copy.getContext('2d')
+                      context.drawImage(source, 0, 0)
+                      const { data, width, height } = context.getImageData(
+                        0, 0, copy.width, copy.height,
+                      )
+                      let count = 0
+                      let sumX = 0
+                      let sumY = 0
+                      for (let y = 0; y < height; y += 1) {
+                        for (let x = 0; x < width; x += 1) {
+                          const i = 4 * (y * width + x)
+                          if (data[i] < 80 && data[i + 1] > 180 && data[i + 2] < 100) {
+                            count += 1
+                            sumX += x
+                            sumY += y
+                          }
+                        }
+                      }
+                      return {
+                        count,
+                        cx: sumX / count,
+                        cy: sumY / count,
+                        width,
+                        height,
+                      }
+                    }"""
+                )
+            finally:
+                browser.close()
+    finally:
+        server.close()
+
+    assert position['display'] != 'none'
+    assert position['cx'] == pytest.approx(position['width'] / 2, abs=2)
+    assert position['cy'] == pytest.approx(position['height'] / 2, abs=2)
+    assert overlay_state == {
+        'visible': 'true',
+        'opacity': '25%',
+        'colormap': 'Plasma',
+        'stretchLow': '20%',
+        'stretchHigh': '80%',
+    }
+    assert hidden_overlay_visible == 'false'
+    assert globe_marker['count'] > 20
+    assert globe_marker['cx'] == pytest.approx(globe_marker['width'] / 2, abs=3)
+    assert globe_marker['cy'] == pytest.approx(globe_marker['height'] / 2, abs=3)
+
+
+def test_browser_selects_custom_palette_when_overlay_definition_changes(tmp_path):
+    playwright_api = pytest.importorskip('playwright.sync_api')
+    from geoxplain._screenshot import _ScreenshotServer
+    from geoxplain._static_server import _copy_browser_bundle, _write_json_atomic
+
+    viewer = GeoXplain()
+    viewer.add_attribution(_array(), pressure_level=850)
+    viewer.add_overlay(_array(), name='Weather Field', colormap='viridis')
+
+    bundle_dir = tmp_path / 'browser'
+    _copy_browser_bundle(bundle_dir, hint='Build the frontend browser bundle.')
+    _write_json_atomic(bundle_dir / 'viewer_data.json', viewer._build_payload())
+    server = _ScreenshotServer(bundle_dir)
+
+    try:
+        with playwright_api.sync_playwright() as playwright:
+            try:
+                browser = playwright.chromium.launch(
+                    args=['--use-gl=angle', '--use-angle=swiftshader'],
+                )
+            except playwright_api.Error as exc:
+                pytest.skip(f'Playwright Chromium is unavailable: {exc}')
+
+            try:
+                page = browser.new_page(
+                    viewport={'width': 1100, 'height': 820},
+                    device_scale_factor=1,
+                )
+                page.goto(server.href, wait_until='load', timeout=15_000)
+                page.wait_for_selector(
+                    '[data-geoxplain-viewer-ready="true"]',
+                    timeout=15_000,
+                )
+                row = page.locator(
+                    '[data-geoxplain-overlay-slug="weather-field"]',
+                )
+                assert row.locator('button[aria-pressed]').evaluate_all(
+                    '(buttons) => buttons.map((button) => button.getAttribute("aria-label"))'
+                ) == ['Viridis', 'Plasma', 'Thermal', 'Seq.']
+
+                viewer.add_overlay(
+                    _array(),
+                    name='Weather Field',
+                    colormap=[(0.0, '#2166ac'), (0.5, '#f7f7f7'), (1.0, '#b2182b')],
+                )
+                _write_json_atomic(
+                    bundle_dir / 'viewer_data.json',
+                    viewer._build_payload(),
+                )
+
+                custom_button = row.locator(
+                    'button[aria-label="Custom"][aria-pressed="true"]',
+                )
+                custom_button.wait_for(timeout=10_000)
+                assert row.locator('button[aria-pressed]').evaluate_all(
+                    '(buttons) => buttons.map((button) => button.getAttribute("aria-label"))'
+                ) == ['Viridis', 'Plasma', 'Thermal', 'Custom']
+            finally:
+                browser.close()
+    finally:
+        server.close()

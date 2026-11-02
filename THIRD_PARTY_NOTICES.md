@@ -56,6 +56,9 @@ The viewer includes scientific color ramps inspired by or derived from common
 visualization palettes, including Matplotlib/viscm perceptually uniform
 colormaps and ColorBrewer-style schemes.
 
+The `thermal` color ramp is derived from cmocean by Kristen M. Thyng and
+contributors. cmocean is distributed under the MIT License.
+
 ColorBrewer software and ColorBrewer color schemes are licensed under the
 Apache License, Version 2.0, with the following acknowledgment requested by the
 ColorBrewer license:

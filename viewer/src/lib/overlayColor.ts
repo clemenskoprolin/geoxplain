@@ -13,8 +13,17 @@ export const OVERLAY_COLORMAP_LABELS: Record<OverlayColormap, string> = {
 export const OVERLAY_COLORMAP_GRADIENTS: Record<Exclude<OverlayColormap, 'custom'>, string> = {
   viridis: 'linear-gradient(to right, #440154, #31688e, #35b779, #fde725)',
   plasma: 'linear-gradient(to right, #0d0887, #7e03a8, #cc4778, #f89540, #f0f921)',
-  thermal: 'linear-gradient(to right, #0000ff, #00ffff, #ffff00, #ff0000)',
+  thermal: 'linear-gradient(to right, #042333, #10326b, #40349f, #684496, #8b538d, #b05f82, #d66c6c, #f2824d, #fca63c, #f7cf45, #e8fa5b)',
   sequential: 'linear-gradient(to right, #fafafa, #bad4ee, #2d7ab3, #17396b)',
+}
+
+const OVERLAY_UI_PRESETS: OverlayColormap[] = ['viridis', 'plasma', 'thermal', 'sequential']
+
+/** Keep four palette slots, replacing only the rightmost preset for custom data. */
+export function orderedOverlayUiColormaps(hasCustom = false): OverlayColormap[] {
+  const palettes = [...OVERLAY_UI_PRESETS]
+  if (hasCustom) palettes[palettes.length - 1] = 'custom'
+  return palettes
 }
 
 function stopColorCss(stop: OverlayColorStop): string {
